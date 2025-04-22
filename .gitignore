@@ -1,3 +1,5 @@
+# === 基础部分（官方推荐内容） ===
+
 # Visual Studio
 .vs/
 *.sln
@@ -7,69 +9,65 @@
 *.VC.db
 *.VC.opendb
 
-# Compiled Object files
+# 编译生成文件
 *.slo
 *.lo
 *.o
 *.obj
-
-# Precompiled Headers
 *.gch
 *.pch
-
-# Compiled Dynamic libraries
 *.so
 *.dylib
 *.dll
-
-# Fortran module files
 *.mod
-
-# Compiled Static libraries
 *.lai
 *.la
 *.a
 *.lib
-
-# Executables
 *.exe
 *.out
 *.app
 *.ipa
 
-# Xcode project files
+# Xcode 项目
 *.xcodeproj
 *.xcworkspace
 
-# Precompiled Assets
+# 预处理资源
 SourceArt/**/*.png
 SourceArt/**/*.tga
 
-# Binary Files
-Binaries/*
+# 引擎/插件生成内容
+Binaries/
 Plugins/**/Binaries/*
-
-# Builds
+Intermediate/
+Plugins/**/Intermediate/*
+DerivedDataCache/*
+Saved/
 Build/*
 !Build/*/
 Build/*/**
 !Build/*/PakBlacklist*.txt
 !Build/**/*.ico
-
-# Built data for maps
 *_BuiltData.uasset
 
-# Editor-generated config
-Saved/*
+# === 保留部分 ===
+!Config/
+!Source/
+!*.uproject
 
-# Intermediate build files
-Intermediate/*
-Plugins/**/Intermediate/*
+# === 重点：忽略大资源，但保留蓝图 ===
 
-# Editor Cache
-DerivedDataCache/*
+# 忽略所有 Content（包括贴图、模型等）
+Content/**/*
+# 但保留 Content/0_SlashBlueprint 目录本身
+!Content/0_SlashBlueprint/
+# 再忽略 Content/0_SlashBlueprint 下的所有文件
+Content/0_SlashBlueprint/**/*
+# 最后明确保留蓝图文件
+!Content/0_SlashBlueprint/**/*.uasset
+!Content/0_SlashBlueprint/**/*.umap
 
-# --- Devin, Configuratuion for individual learning only ---
-# 忽略资源文件
-Content/**
 *.zip
+
+
