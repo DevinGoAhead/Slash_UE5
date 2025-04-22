@@ -1,0 +1,75 @@
+# Visual Studio
+.vs/
+*.sln
+*.suo
+*.opensdf
+*.sdf
+*.VC.db
+*.VC.opendb
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+*.ipa
+
+# Xcode project files
+*.xcodeproj
+*.xcworkspace
+
+# Precompiled Assets
+SourceArt/**/*.png
+SourceArt/**/*.tga
+
+# Binary Files
+Binaries/*
+Plugins/**/Binaries/*
+
+# Builds
+Build/*
+!Build/*/
+Build/*/**
+!Build/*/PakBlacklist*.txt
+!Build/**/*.ico
+
+# Built data for maps
+*_BuiltData.uasset
+
+# Editor-generated config
+Saved/*
+
+# Intermediate build files
+Intermediate/*
+Plugins/**/Intermediate/*
+
+# Editor Cache
+DerivedDataCache/*
+
+# --- Devin, Configuratuion for individual learning only ---
+# 忽略资源文件
+Content/**
+*.zip
