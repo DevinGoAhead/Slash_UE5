@@ -59,15 +59,17 @@ Build/*/**
 # === 重点：忽略大资源，但保留蓝图 ===
 
 # 忽略所有 Content（包括贴图、模型等）
-Content/**/*
+Content/*
 # 但保留 Content/0_SlashBlueprint 目录本身
 !Content/0_SlashBlueprint/
-# 再忽略 Content/0_SlashBlueprint 下的所有文件
-Content/0_SlashBlueprint/**/*
-# 最后明确保留蓝图文件
-!Content/0_SlashBlueprint/**/*.uasset
-!Content/0_SlashBlueprint/**/*.umap
+#!Content/0_SlashBlueprint/**
+# # 再忽略 Content/0_SlashBlueprint 下的所有文件
+# Content/0_SlashBlueprint/**/*
+# # 最后明确保留蓝图文件
+# !Content/0_SlashBlueprint/**/*.uasset
+# !Content/0_SlashBlueprint/**/*.umap
 
+#其它
 *.zip
 
 
