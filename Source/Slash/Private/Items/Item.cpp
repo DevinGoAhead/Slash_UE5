@@ -12,6 +12,10 @@ AItem::AItem() {
 	PrimaryActorTick.bCanEverTick = true;
 }
 
+float AItem::TransformedSin() const{
+	return Amplitude * FMath::Sin(RunningTime * TimeConstant);
+}
+
 // Called when the game starts or when spawned
 void AItem::BeginPlay() {
 	// Super::, 调用父类成员函	数
@@ -22,12 +26,8 @@ void AItem::BeginPlay() {
 // Called every frame
 void AItem::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
-	
 	RunningTime += DeltaTime;
-	AddActorWorldOffset(FVector(0.f, 0.f, Amplitude * FMath::Sin(RunningTime * TimeConstant)));// 世界坐标中位置的变换
-	
-	FVector ActorLocation = GetActorLocation();
-	DRAW_DEBUG_SPHERE(this, ActorLocation, 25.f, int32(32), FColor::Cyan, false);
-	
+
+	DRAW_DEBUG_SPHERE(this, GetActorLocation(), 25.f, int32(24), FColor::Blue);
 }
 
