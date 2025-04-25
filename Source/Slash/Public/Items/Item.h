@@ -14,20 +14,30 @@ public:
 	// Sets default values for this actor's properties
 	// 设置 Actor 的默认属性
 	AItem();
+
+	// Called every frame
+	// 向未来推进一帧
+	virtual void Tick(float DeltaTime) override;
+
 protected:
 	//UFUNCTION(BlueprintCallable) // 允许在Blueprint 中调用
 	UFUNCTION(BlueprintPure) // 纯蓝图函数, 不需要输入和输出
 	float TransformedSin() const;
 
-protected:
+	UFUNCTION(BlueprintPure)
+	float TransformedCos() const;
+
 	// Called when the game starts or when spawned
 	// 游戏开始或被生成时调用, 虚函数
 	virtual void BeginPlay() override;
 
-public:	
-	// Called every frame
-	// 向未来推进一帧
-	virtual void Tick(float DeltaTime) override;
+private:
+	// VisibleInstanceOnly, 仅在 place 到世界的实例的 detail 中显示
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	float RunningTime = 0.f; // 累计运行时间
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* ItemMesh;
 
 protected:
 	// Blueprint 通常不能是private
@@ -40,9 +50,4 @@ protected:
 	// EditDefaultsOnly, 在 BP Detail(蓝图窗口) 可见, instance detail 中可见并且可修改
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float Amplitude = 1.f; // 振幅, 配合 sin cos 函数
-
-private:
-	// VisibleInstanceOnly, 仅在 place 到世界的实例的 detail 中显示
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	float RunningTime = 0.f; // 累计运行时间
 };

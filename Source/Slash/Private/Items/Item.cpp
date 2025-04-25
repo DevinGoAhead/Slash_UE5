@@ -10,10 +10,16 @@ AItem::AItem() {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	// 如果 actor 不需要参与 tick, 例如 静态对象, 可以设置为 false
 	PrimaryActorTick.bCanEverTick = true;
+	ItemMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ItemMeshComponent"));
+	RootComponent = ItemMesh; // 将 ItemMesh 设置为根组件
 }
 
 float AItem::TransformedSin() const{
 	return Amplitude * FMath::Sin(RunningTime * TimeConstant);
+}
+
+float AItem::TransformedCos() const{
+	return Amplitude * FMath::Cos(RunningTime * TimeConstant);
 }
 
 // Called when the game starts or when spawned
@@ -26,8 +32,7 @@ void AItem::BeginPlay() {
 // Called every frame
 void AItem::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
+	
 	RunningTime += DeltaTime;
-
-	DRAW_DEBUG_SPHERE(this, GetActorLocation(), 25.f, int32(24), FColor::Blue);
 }
 
