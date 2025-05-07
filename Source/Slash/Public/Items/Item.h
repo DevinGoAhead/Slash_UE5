@@ -62,7 +62,7 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	USphereComponent* Sphere;
-private:
+//private://子类需要访问, 故去掉 private
 	// VisibleInstanceOnly, 仅在 place 到世界的实例的 detail 中显示
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	float RunningTime = 0.f; // 累计运行时间

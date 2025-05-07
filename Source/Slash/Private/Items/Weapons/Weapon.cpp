@@ -2,15 +2,24 @@
 
 
 #include "Items/Weapons/Weapon.h"
+#include "Items/Weapons/Weapon.h"
+#include "Slash/Public/Characters/SlashCharacter.h"
 
 void AWeapon::OnSphereBeginOverlap(
-	UPrimitiveComponent* OverlappedComponent,
-	AActor* OtherActor,
-	UPrimitiveComponent* OtherComp,
-	int32 OtherBodyIndex,
-	bool bFromSweep,
-	const FHitResult& SweepResult) {
+		UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex,
+		bool bFromSweep,
+		const FHitResult& SweepResult) {
 	Super::OnSphereBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
+	ASlashCharacter* SlashCharacter = Cast<ASlashCharacter>(OtherActor); // 父类转子类
+	if (SlashCharacter) { // 如果成功
+		//SlashCharacter->GetMesh(),// SkeletalMeshComponent*
+		
+		ItemMesh->AttachToComponent(SlashCharacter->GetMesh(), 
+			FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), FName("RightHandSocket"));
+	}
 }
 
 void AWeapon::OnSphereEndOverlap(
