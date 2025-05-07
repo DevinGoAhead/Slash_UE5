@@ -28,7 +28,7 @@ protected:
 	float TransformedCos() const;
 
 	UFUNCTION()
-	void OnSphereBeginOverlap(
+	virtual void OnSphereBeginOverlap(
 		UPrimitiveComponent* OverlappedComponent,
 		AActor* OtherActor,
 		UPrimitiveComponent* OtherComp,
@@ -38,7 +38,7 @@ protected:
 
 
 	UFUNCTION()
-	void OnSphereEndOverlap(
+	virtual void OnSphereEndOverlap(
 		UPrimitiveComponent* OverlappedComponent,
 		AActor* OtherActor,
 		UPrimitiveComponent* OtherComp,
@@ -47,14 +47,6 @@ protected:
 	// Called when the game starts or when spawned
 	// 游戏开始或被生成时调用, 虚函数
 	virtual void BeginPlay() override;
-
-private:
-	// VisibleInstanceOnly, 仅在 place 到世界的实例的 detail 中显示
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	float RunningTime = 0.f; // 累计运行时间
-
-	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* ItemMesh;
 
 protected:
 	// Blueprint 通常不能是private
@@ -70,4 +62,11 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	USphereComponent* Sphere;
+private:
+	// VisibleInstanceOnly, 仅在 place 到世界的实例的 detail 中显示
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	float RunningTime = 0.f; // 累计运行时间
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* ItemMesh;
 };

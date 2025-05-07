@@ -13,7 +13,7 @@
 *.slo
 *.lo
 *.o
-*.obj
+*.obj 
 *.gch
 *.pch
 *.so
@@ -69,6 +69,8 @@ Content/*
 # !Content/0_SlashBlueprint/**/*.uasset
 # !Content/0_SlashBlueprint/**/*.umap
 
+#外部导入资源
+OutAssets/
 #其它
 *.zip
 
