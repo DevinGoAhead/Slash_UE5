@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
+#include "CharacerTypes.h"
 #include "SlashAnimInstance.generated.h"
 
 class ASlashCharacter;
@@ -29,4 +30,8 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, Category = Movement)
 	bool IsFalling; // 是否正在下落
+
+	UPROPERTY(BlueprintReadOnly, Category = "Movement | Character State")
+	ECharacterStates CharacterState;
+
 };

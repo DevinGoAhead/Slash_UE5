@@ -4,6 +4,7 @@
 #include "Items/Item.h"
 #include "DrawDebugHelpers.h"
 #include "Components/SphereComponent.h"
+#include "Slash/Public/Characters/SlashCharacter.h"
 #include "../DebugMacros.h"
 
 // Sets default values
@@ -33,9 +34,9 @@ void AItem::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent,
 	int32 OtherBodyIndex,
 	bool bFromSweep, 
 	const FHitResult& SweepResult) {
-
-	if (GEngine) {
-		GEngine->AddOnScreenDebugMessage(3, 15.f, FColor::Cyan, FString("Begin Overlap") + OtherActor->GetName());
+	ASlashCharacter* SlashCharacter = Cast<ASlashCharacter>(OtherActor); // 父类转子类
+	if (SlashCharacter) { // 如果成功
+		SlashCharacter->SetOverlappingItem(this);
 	}
 }
 
@@ -44,8 +45,9 @@ void AItem::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent,
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex) {
 
-	if (GEngine) {
-		GEngine->AddOnScreenDebugMessage(4, 15.f, FColor::Blue, FString("End Overlap") + OtherActor->GetName());
+	ASlashCharacter* SlashCharacter = Cast<ASlashCharacter>(OtherActor); // 父类转子类
+	if (SlashCharacter) { // 如果成功
+		SlashCharacter->SetOverlappingItem(nullptr);
 	}
 }
 // Called when the game starts or when spawned
