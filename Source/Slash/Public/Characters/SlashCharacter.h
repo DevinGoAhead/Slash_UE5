@@ -11,6 +11,7 @@ class UCameraComponent;
 class USpringArmComponent;
 class UGroomComponent;
 class AItem;
+class UAnimMontage;
 
 UCLASS()
 class SLASH_API ASlashCharacter : public ACharacter
@@ -32,22 +33,30 @@ private:
 	void Turn(float Value);
 	void LookUp(float Value);
 	void Equip();
+	void Attack();
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 private:
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Category = "Component")
 	UCameraComponent* CameraView;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Category = "Component")
 	USpringArmComponent* SpringArm;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Category = "Component")
 	UGroomComponent* Hair;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Category = "Component")
 	UGroomComponent* Eyebrow;
 
-	UPROPERTY(VisibleInstanceOnly) // 仅实例可见
+	UPROPERTY(VisibleInstanceOnly, Category = "Item") // 仅实例可见
 	AItem* OverlappingItem;
 
 	ECharacterStates CharacterState;
+	
+	// 暴露给蓝图, 且允许蓝图修改, 将播放蒙太奇的决定权留给蓝图
+	UPROPERTY(EditDefaultsOnly, Category = "Montage")
+	UAnimMontage* AttackMontage;
+	
+	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	EActionStates ActionState;
 };

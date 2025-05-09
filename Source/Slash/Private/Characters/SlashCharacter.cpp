@@ -6,11 +6,13 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Slash/Public/Items/Item.h"
+#include "Slash/Public/Items/Weapons/Weapon.h"
 #include "GroomComponent.h"
+#include "Animation/AnimMontage.h"
 
 // Sets default values
 ASlashCharacter::ASlashCharacter()
-	: OverlappingItem(nullptr), CharacterState(ECharacterStates::ECS_UnEquiped)
+	: OverlappingItem(nullptr), CharacterState(ECharacterStates::ECS_UnEquiped), ActionState(EActionStates::EAS_Unoccupied)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -52,7 +54,7 @@ void ASlashCharacter::MoveForward(float Value) {
 	// 可以理解为XZ 平面的一个单位向量, 累计转动 Yaw 之后的方向, 即 (cos(Yaw), sin(Yaw), 0.f)
 	// Direction = (cos(Yaw), sin(Yaw), 0.f) // Yaw 要转为弧度
 	// 示例代码中使用了一种更稳妥的方式而已
-	if (Controller && Value) {
+	if (ActionState == EActionStates::EAS_Unoccupied && Controller && Value) {
 		const FRotator ControlRotation = GetControlRotation(); // 控制器的欧拉角结构体
 		const FRotator YawRotation = FRotator(0.f, ControlRotation.Yaw, 0.f);//基于 Yaw 构造旋转矩阵
 		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
@@ -62,7 +64,7 @@ void ASlashCharacter::MoveForward(float Value) {
 
 void ASlashCharacter::MoveRight(float Value) {
 	// 本质是 Direction = (cos(Yaw + π / 2), sin(Yaw +  π / 2), 0.f) // Yaw 要转为弧度
-	if (Controller && Value) {
+	if (ActionState == EActionStates::EAS_Unoccupied && Controller && Value) {
 		const FRotator ControlRotation = GetControlRotation(); // 控制器的欧拉角结构体
 		const FRotator YawRotation = FRotator(0.f, ControlRotation.Yaw, 0.f);//基于 Yaw 构造旋转矩阵
 		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
@@ -83,11 +85,29 @@ void ASlashCharacter::LookUp(float Value) {
 }
 void ASlashCharacter::Equip() {
 	if (OverlappingItem) {
-		OverlappingItem->AttachToComponent(GetMesh(),
-			FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), FName("RightHandSocket"));
+		/*OverlappingItem->AttachToComponent(GetMesh(),
+			FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), FName("RightHandSocket"));*/
+		// 在设置装备状态时发现, 上面逻辑有些问题
+		AWeapon* Weapon = Cast<AWeapon>(OverlappingItem);
+		if (Weapon) {
+			Weapon->EquiWeapon(GetMesh(), FName("RightHandSocket"));
+		}
 		CharacterState = ECharacterStates::ECS_EquippedOneHandedWeapon;
 	}
 }
+
+void ASlashCharacter::Attack() {
+	auto AnimInstance = GetMesh()->GetAnimInstance();
+	if (CharacterState != ECharacterStates::ECS_UnEquiped && ActionState == EActionStates::EAS_Unoccupied && AnimInstance && AttackMontage) {
+		ActionState = EActionStates::EAS_Attacking;
+		AnimInstance->Montage_Play(AttackMontage); // 准备播放状态
+		TArray<FName> Sections{"Attack_1", "Attack_2", "Attack_3"};
+		uint8 Random = FMath::RandRange((int32)0, (int32)(Sections.Num() - 1));
+		AnimInstance->Montage_JumpToSection(Sections[Random], AttackMontage);
+		
+	}
+}
+
 // Called every frame
 void ASlashCharacter::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
@@ -106,5 +126,6 @@ void ASlashCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 	// 这里没有定义 ASlashCharacter::Jump, 直接调用父类的 Jump
 	PlayerInputComponent->BindAction(FName("Jump"), IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction(FName("Equip"), IE_Pressed, this, &ASlashCharacter::Equip);
+	PlayerInputComponent->BindAction(FName("Attack"), IE_Pressed, this, &ASlashCharacter::Attack);
 }
 

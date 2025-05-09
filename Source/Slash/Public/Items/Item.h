@@ -2,6 +2,11 @@
 
 #pragma once
 
+enum class EItemStates : uint8 {
+	EIS_Hoverring,
+	EIS_Equipped
+};
+
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h" // 这是 AActor 所在的头文件
 #include "Item.generated.h" // C++ 参与 UE 反射相关
@@ -69,4 +74,6 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* ItemMesh;
+
+	EItemStates ItemState;
 };

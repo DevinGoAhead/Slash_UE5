@@ -33,5 +33,4 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, Category = "Movement | Character State")
 	ECharacterStates CharacterState;
-
 };

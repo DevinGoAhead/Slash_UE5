@@ -8,7 +8,7 @@
 #include "../DebugMacros.h"
 
 // Sets default values
-AItem::AItem() : TimeConstant(4.f), Amplitude(10.f){
+AItem::AItem() : TimeConstant(4.f), Amplitude(10.f), ItemState(EItemStates::EIS_Hoverring){
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	// 如果 actor 不需要参与 tick, 例如 静态对象, 可以设置为 false
 	PrimaryActorTick.bCanEverTick = true;
@@ -65,7 +65,8 @@ void AItem::BeginPlay() {
 void AItem::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
 	RunningTime += DeltaTime;
-
-	AddActorWorldOffset(FVector(0.f, 0.f, TransformedSin()));
+	if (ItemState == EItemStates::EIS_Hoverring) {
+		AddActorWorldOffset(FVector(0.f, 0.f, TransformedSin()));
+	}
 }
 

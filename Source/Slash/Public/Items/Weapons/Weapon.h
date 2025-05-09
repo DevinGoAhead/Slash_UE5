@@ -13,7 +13,8 @@ UCLASS()
 class SLASH_API AWeapon : public AItem
 {
 GENERATED_BODY() // C++ 参与 UE 反射相关, 
-
+public:
+	void EquiWeapon(USceneComponent* Inparent, const FName& InSocket);
 protected:
 	virtual void OnSphereBeginOverlap (
 		UPrimitiveComponent* OverlappedComponent,

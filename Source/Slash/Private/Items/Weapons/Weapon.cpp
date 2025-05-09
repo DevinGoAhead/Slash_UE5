@@ -4,6 +4,11 @@
 #include "Items/Weapons/Weapon.h"
 #include "Slash/Public/Characters/SlashCharacter.h"
 
+void AWeapon::EquiWeapon(USceneComponent* Inparent, const FName& InSocket) {
+	AttachToComponent(Inparent, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), InSocket);
+	ItemState = EItemStates::EIS_Equipped;
+}
+
 void AWeapon::OnSphereBeginOverlap(
 		UPrimitiveComponent* OverlappedComponent,
 		AActor* OtherActor,
