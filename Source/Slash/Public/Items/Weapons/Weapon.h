@@ -6,6 +6,8 @@
 #include "Items/Item.h"
 #include "Weapon.generated.h"
 
+class USoundBase;
+class UBoxComponent;
 /**
  * 
  */
@@ -14,7 +16,9 @@ class SLASH_API AWeapon : public AItem
 {
 GENERATED_BODY() // C++ 参与 UE 反射相关, 
 public:
-	void EquiWeapon(USceneComponent* Inparent, const FName& InSocket);
+	AWeapon();
+	void EquipWeapon(USceneComponent* Inparent, const FName& InSocket);
+	void AttachToComponentSnap(USceneComponent* Inparent, const FName& InSocket);
 protected:
 	virtual void OnSphereBeginOverlap (
 		UPrimitiveComponent* OverlappedComponent,
@@ -30,4 +34,10 @@ protected:
 		AActor* OtherActor,
 		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex) override;
+private:
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
+	USoundBase* EquipSound;
+
+	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
+	UBoxComponent* Box;
 };

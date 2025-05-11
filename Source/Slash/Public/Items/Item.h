@@ -55,7 +55,6 @@ protected:
 
 protected:
 	// Blueprint 通常不能是private
-	// 
 	// EditAnywhere, 在 BP Detail(蓝图窗口) 和 instance detail 中均可见并且可修改
 	// BlueprintReadWrite, 暴露给 blueprint graph, 可以 get, 可以 set
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Move And Rotate")

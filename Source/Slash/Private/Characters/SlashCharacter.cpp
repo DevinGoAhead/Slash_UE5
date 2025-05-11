@@ -12,7 +12,9 @@
 
 // Sets default values
 ASlashCharacter::ASlashCharacter()
-	: OverlappingItem(nullptr), CharacterState(ECharacterStates::ECS_UnEquiped), ActionState(EActionStates::EAS_Unoccupied)
+	: OverlappingItem(nullptr), EquippedWeapon(nullptr), EquipMontage(nullptr), AttackMontage(nullptr)
+	, CharacterState(ECharacterStates::ECS_UnEquiped)
+	, ActionState(EActionStates::EAS_Unoccupied)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -48,6 +50,21 @@ void ASlashCharacter::BeginPlay() {
 	Super::BeginPlay();
 	
 }
+
+// 将武器挂载到 SpineSocket
+void ASlashCharacter::Disarm() {
+	if (EquippedWeapon) {
+		EquippedWeapon->AttachToComponentSnap(GetMesh(), FName("SpineSocket"));
+	}
+}
+
+// 将武器挂载到 RightHandSocket
+void ASlashCharacter::Arm() {
+	if (EquippedWeapon) {
+		EquippedWeapon->AttachToComponentSnap(GetMesh(), FName("RightHandSocket"));
+	}
+}
+
 void ASlashCharacter::MoveForward(float Value) {
 	// 相机的 forward 向量 会随着控制器旋转, 这个旋转可能会导致 forward 向下向上倾斜, 而我们只希望获得 XZ 平面的分量
 	// 相机的的旋转与 Controller 是一致的, 而我们需要的forward XZ 平面的分量本质就是 Controller 旋转矩阵中受 Yaw 影响的部分
@@ -83,28 +100,40 @@ void ASlashCharacter::LookUp(float Value) {
 		AddControllerPitchInput(Value);
 	}
 }
-void ASlashCharacter::Equip() {
+void ASlashCharacter::EKeyPressed() {
 	if (OverlappingItem) {
-		/*OverlappingItem->AttachToComponent(GetMesh(),
-			FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), FName("RightHandSocket"));*/
-		// 在设置装备状态时发现, 上面逻辑有些问题
-		AWeapon* Weapon = Cast<AWeapon>(OverlappingItem);
-		if (Weapon) {
-			Weapon->EquiWeapon(GetMesh(), FName("RightHandSocket"));
+		EquippedWeapon = Cast<AWeapon>(OverlappingItem);
+		if (EquippedWeapon) {
+			EquippedWeapon->EquipWeapon(GetMesh(), FName("RightHandSocket"));
+			CharacterState = ECharacterStates::ECS_EquippedOneHandedWeapon;
+			OverlappingItem = nullptr;
 		}
-		CharacterState = ECharacterStates::ECS_EquippedOneHandedWeapon;
+	}
+	
+	// 空闲状态 且 设置了有效的 Montage, 允许装卸武器
+	else if (EquippedWeapon && ActionState == EActionStates::EAS_Unoccupied && EquipMontage){
+		if (CharacterState != ECharacterStates::ECS_UnEquiped) { //此时处于装备武器状态, 即允许执行卸载武器动作
+			ActionState = EActionStates::EAS_Equipping;
+			PlayMontage(FName("Disarm"), EquipMontage);
+			CharacterState = ECharacterStates::ECS_UnEquiped; // 卸载武器后设置为未装备状态
+			
+		}
+		else if (CharacterState == ECharacterStates::ECS_UnEquiped) {
+			ActionState = EActionStates::EAS_Equipping;
+			PlayMontage(FName("Arm"), EquipMontage);
+			CharacterState = ECharacterStates::ECS_EquippedOneHandedWeapon; // 装备武器后设置为装备状态
+		}
 	}
 }
 
 void ASlashCharacter::Attack() {
-	auto AnimInstance = GetMesh()->GetAnimInstance();
-	if (CharacterState != ECharacterStates::ECS_UnEquiped && ActionState == EActionStates::EAS_Unoccupied && AnimInstance && AttackMontage) {
+	if (CharacterState != ECharacterStates::ECS_UnEquiped 
+			&& ActionState == EActionStates::EAS_Unoccupied 
+			&& AttackMontage) {
 		ActionState = EActionStates::EAS_Attacking;
-		AnimInstance->Montage_Play(AttackMontage); // 准备播放状态
 		TArray<FName> Sections{"Attack_1", "Attack_2", "Attack_3"};
 		uint8 Random = FMath::RandRange((int32)0, (int32)(Sections.Num() - 1));
-		AnimInstance->Montage_JumpToSection(Sections[Random], AttackMontage);
-		
+		PlayMontage( Sections[Random], AttackMontage);
 	}
 }
 
@@ -125,7 +154,15 @@ void ASlashCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 
 	// 这里没有定义 ASlashCharacter::Jump, 直接调用父类的 Jump
 	PlayerInputComponent->BindAction(FName("Jump"), IE_Pressed, this, &ACharacter::Jump);
-	PlayerInputComponent->BindAction(FName("Equip"), IE_Pressed, this, &ASlashCharacter::Equip);
+	PlayerInputComponent->BindAction(FName("EKeyPressed"), IE_Pressed, this, &ASlashCharacter::EKeyPressed);
 	PlayerInputComponent->BindAction(FName("Attack"), IE_Pressed, this, &ASlashCharacter::Attack);
+}
+
+void ASlashCharacter::PlayMontage(FName MontageSction, UAnimMontage* Montage) {
+	auto AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance) {
+		AnimInstance->Montage_Play(Montage);// 准备播放状态
+		AnimInstance->Montage_JumpToSection(MontageSction, Montage);
+	}
 }
 
