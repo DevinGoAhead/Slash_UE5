@@ -9,6 +9,7 @@
 #include "Slash/Public/Items/Weapons/Weapon.h"
 #include "GroomComponent.h"
 #include "Animation/AnimMontage.h"
+#include "Components/BoxComponent.h"
 
 // Sets default values
 ASlashCharacter::ASlashCharacter()
@@ -55,6 +56,15 @@ void ASlashCharacter::BeginPlay() {
 void ASlashCharacter::Disarm() {
 	if (EquippedWeapon) {
 		EquippedWeapon->AttachToComponentSnap(GetMesh(), FName("SpineSocket"));
+	}
+}
+
+void ASlashCharacter::SetWeaponBoxCollision(ECollisionEnabled::Type CollisionEnabledType) {
+	if (EquippedWeapon) {
+		UBoxComponent* Box = EquippedWeapon->GetCollisionBox();
+		if(Box) {
+			Box->SetCollisionEnabled(CollisionEnabledType);
+		}
 	}
 }
 

@@ -5,12 +5,26 @@
 #include "Slash/Public/Characters/SlashCharacter.h"
 #include "Sound/SoundBase.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "Components/SphereComponent.h"
 #include "Components/BoxComponent.h"
+#include "Slash/DebugMacros.h"
 
 AWeapon::AWeapon() : EquipSound(nullptr) {
-	Box = CreateDefaultSubobject<UBoxComponent>(FName("Box"));
-	Box->SetupAttachment(GetRootComponent());
+	CollisionBox = CreateDefaultSubobject<UBoxComponent>(FName("CollisionBox"));
+	CollisionBox->SetupAttachment(GetRootComponent());
+
+	// 配置 Collision 属性
+	CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	CollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
+	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore); // 避免与角色碰撞
+
+	//我这里采取了与示例不同的方案
+	TraceStart = CreateDefaultSubobject<USceneComponent>(FName("TraceStart"));
+	TraceStart->SetupAttachment(CollisionBox);
+		
+	TraceEnd = CreateDefaultSubobject<USceneComponent>(FName("TraceEnd"));
+	TraceEnd->SetupAttachment(CollisionBox);
 }
 
 void AWeapon::EquipWeapon(USceneComponent* Inparent, const FName& InSocket) {
@@ -46,4 +60,35 @@ void AWeapon::OnSphereEndOverlap(
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex) {
 	Super::OnSphereEndOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex);
+}
+
+void AWeapon::BeginPlay() {
+	Super::BeginPlay();
+	// 对 TraceStart, TraceEnd 调整
+	//这里Location 的确定需要根据蓝图中CollisionBox 的调整情况确定
+	auto Extent = CollisionBox->GetScaledBoxExtent();
+	TraceStart->SetRelativeLocation(FVector(0.f, -Extent.Y, 0.f));
+	TraceEnd->SetRelativeLocation(FVector(0.f, Extent.Y, 0.f));
+	/*DRAW_DEBUG_SPHERE(this, TraceStart->GetComponentLocation(), 2.5f, 10,
+		FColor::Cyan, false, 50.f, (uint8)0U, 1.f);
+	DRAW_DEBUG_SPHERE(this, TraceEnd->GetComponentLocation(), 2.5f, 10,
+		FColor::Cyan, false, 50.f, (uint8)0U, 1.f);*/
+	if (CollisionBox) {
+		CollisionBox->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnBoxOverlap);
+	}
+}
+
+void AWeapon::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent,
+	AActor* OtherActor,
+	UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex,
+	bool bFromSweep,
+	const FHitResult& SweepResult){
+	FHitResult HitResult;
+	auto Extent = CollisionBox->GetScaledBoxExtent();
+	UKismetSystemLibrary::BoxTraceSingle(this, TraceStart->GetComponentLocation(), TraceEnd->GetComponentLocation(),
+		FVector(Extent.X, 0.5f, Extent.Z), TraceStart->GetComponentRotation(), ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>{this}, EDrawDebugTrace::ForDuration,
+		HitResult, true);
+	DRAW_DEBUG_SPHERE(this, HitResult.ImpactPoint, 3.f, 5,
+		FColor::Cyan, false, 10.f, (uint8)0U, 1.f);
 }

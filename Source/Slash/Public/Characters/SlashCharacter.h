@@ -34,6 +34,9 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void Disarm();
 
+	UFUNCTION(BlueprintCallable)
+	void SetWeaponBoxCollision(ECollisionEnabled::Type CollisionEnabledType);
+
 private:
 	void MoveForward(float Value);
 	void MoveRight(float Value);
