@@ -15,7 +15,7 @@ AWeapon::AWeapon() : EquipSound(nullptr) {
 	CollisionBox->SetupAttachment(GetRootComponent());
 
 	// 配置 Collision 属性
-	CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	CollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	CollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
 	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore); // 避免与角色碰撞
 
@@ -79,16 +79,33 @@ void AWeapon::BeginPlay() {
 }
 
 void AWeapon::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent,
-	AActor* OtherActor,
-	UPrimitiveComponent* OtherComp,
-	int32 OtherBodyIndex,
-	bool bFromSweep,
-	const FHitResult& SweepResult){
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex,
+		bool bFromSweep,
+		const FHitResult& SweepResult){
+	//这里主要在debug 一个问题, 当 组件的collision状态改变时, 会触发一次overlap 检测, 此时子组件会与父组件发生overlap
+	if (GEngine) {
+		GEngine->AddOnScreenDebugMessage(2, 10.f, FColor::Blue, FString(OtherActor->GetFName().ToString()));
+
+	}
 	FHitResult HitResult;
 	auto Extent = CollisionBox->GetScaledBoxExtent();
-	UKismetSystemLibrary::BoxTraceSingle(this, TraceStart->GetComponentLocation(), TraceEnd->GetComponentLocation(),
-		FVector(Extent.X, 0.5f, Extent.Z), TraceStart->GetComponentRotation(), ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>{this}, EDrawDebugTrace::ForDuration,
+	auto IsHit = UKismetSystemLibrary::BoxTraceSingle(this, TraceStart->GetComponentLocation(), TraceEnd->GetComponentLocation(),
+		FVector(Extent.X, 0.5f, Extent.Z), TraceStart->GetComponentRotation(), ETraceTypeQuery::TraceTypeQuery1, true, TArray<AActor*>{this}, EDrawDebugTrace::ForDuration,
 		HitResult, true);
 	DRAW_DEBUG_SPHERE(this, HitResult.ImpactPoint, 3.f, 5,
 		FColor::Cyan, false, 10.f, (uint8)0U, 1.f);
+	if (IsHit) {
+		if (GEngine) {
+			GEngine->AddOnScreenDebugMessage(3, 10.f, FColor::Blue, FString(HitResult.GetActor()->GetFName().ToString()));
+
+		}
+	}
+	else{
+		if (GEngine) {
+			GEngine->AddOnScreenDebugMessage(4, 10.f, FColor::Blue, FString("HitNothing"));
+
+		}
+	}
 }
