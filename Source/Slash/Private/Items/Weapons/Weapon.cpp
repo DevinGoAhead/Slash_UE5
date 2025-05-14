@@ -9,13 +9,15 @@
 #include "Components/SphereComponent.h"
 #include "Components/BoxComponent.h"
 #include "Slash/DebugMacros.h"
+#include "Enemy/Enemy.h"
 
 AWeapon::AWeapon() : EquipSound(nullptr) {
 	CollisionBox = CreateDefaultSubobject<UBoxComponent>(FName("CollisionBox"));
 	CollisionBox->SetupAttachment(GetRootComponent());
 
 	// 配置 Collision 属性
-	CollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	//CollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	CollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
 	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore); // 避免与角色碰撞
 
@@ -44,6 +46,10 @@ void AWeapon::AttachToComponentSnap(USceneComponent* Inparent, const FName& InSo
 	AttachToComponent(Inparent, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), InSocket);
 }
 
+void AWeapon::SetIgnoreActorsEmpty() {
+	if (!IgnoreActors.IsEmpty()) IgnoreActors.Empty();
+}
+
 void AWeapon::OnSphereBeginOverlap(
 		UPrimitiveComponent* OverlappedComponent,
 		AActor* OtherActor,
@@ -69,10 +75,7 @@ void AWeapon::BeginPlay() {
 	auto Extent = CollisionBox->GetScaledBoxExtent();
 	TraceStart->SetRelativeLocation(FVector(0.f, -Extent.Y, 0.f));
 	TraceEnd->SetRelativeLocation(FVector(0.f, Extent.Y, 0.f));
-	/*DRAW_DEBUG_SPHERE(this, TraceStart->GetComponentLocation(), 2.5f, 10,
-		FColor::Cyan, false, 50.f, (uint8)0U, 1.f);
-	DRAW_DEBUG_SPHERE(this, TraceEnd->GetComponentLocation(), 2.5f, 10,
-		FColor::Cyan, false, 50.f, (uint8)0U, 1.f);*/
+
 	if (CollisionBox) {
 		CollisionBox->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnBoxOverlap);
 	}
@@ -84,28 +87,21 @@ void AWeapon::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent,
 		int32 OtherBodyIndex,
 		bool bFromSweep,
 		const FHitResult& SweepResult){
-	//这里主要在debug 一个问题, 当 组件的collision状态改变时, 会触发一次overlap 检测, 此时子组件会与父组件发生overlap
-	if (GEngine) {
-		GEngine->AddOnScreenDebugMessage(2, 10.f, FColor::Blue, FString(OtherActor->GetFName().ToString()));
+	if (OtherActor == this) return; // 避免 weapon 的 collision box 与 weapon 自己的其它组件 overlap
+	if (IgnoreActors.Find(OtherActor) != INDEX_NONE) return; // 如果之前已被攻击过一次, 已经在 IgnoreActors 中了
 
-	}
 	FHitResult HitResult;
 	auto Extent = CollisionBox->GetScaledBoxExtent();
 	auto IsHit = UKismetSystemLibrary::BoxTraceSingle(this, TraceStart->GetComponentLocation(), TraceEnd->GetComponentLocation(),
-		FVector(Extent.X, 0.5f, Extent.Z), TraceStart->GetComponentRotation(), ETraceTypeQuery::TraceTypeQuery1, true, TArray<AActor*>{this}, EDrawDebugTrace::ForDuration,
+		FVector(Extent.X, 0.5f, Extent.Z), TraceStart->GetComponentRotation(), ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>{this}, EDrawDebugTrace::None,
 		HitResult, true);
-	DRAW_DEBUG_SPHERE(this, HitResult.ImpactPoint, 3.f, 5,
-		FColor::Cyan, false, 10.f, (uint8)0U, 1.f);
-	if (IsHit) {
-		if (GEngine) {
-			GEngine->AddOnScreenDebugMessage(3, 10.f, FColor::Blue, FString(HitResult.GetActor()->GetFName().ToString()));
 
-		}
-	}
-	else{
-		if (GEngine) {
-			GEngine->AddOnScreenDebugMessage(4, 10.f, FColor::Blue, FString("HitNothing"));
-
+	auto HitedActor = HitResult.GetActor();
+	if (HitedActor) {
+		IgnoreActors.AddUnique(HitedActor); // 只有当 IgnoreActors 不存在 HitedActor, 才会添加
+		auto Enemy = Cast<AEnemy>(HitedActor); // 基类转子类
+		if (Enemy) { //如果转换成功
+			Enemy->GetHited(HitResult.ImpactPoint);
 		}
 	}
 }

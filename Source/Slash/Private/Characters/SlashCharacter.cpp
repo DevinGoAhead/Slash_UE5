@@ -64,6 +64,7 @@ void ASlashCharacter::SetWeaponBoxCollision(ECollisionEnabled::Type CollisionEna
 		UBoxComponent* Box = EquippedWeapon->GetCollisionBox();
 		if(Box) {
 			Box->SetCollisionEnabled(CollisionEnabledType);
+			EquippedWeapon->SetIgnoreActorsEmpty();
 		}
 	}
 }

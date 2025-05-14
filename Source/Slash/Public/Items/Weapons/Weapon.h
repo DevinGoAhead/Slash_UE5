@@ -20,6 +20,7 @@ public:
 	void EquipWeapon(USceneComponent* Inparent, const FName& InSocket);
 	void AttachToComponentSnap(USceneComponent* Inparent, const FName& InSocket);
 	FORCEINLINE UBoxComponent* GetCollisionBox() { return CollisionBox; }
+	void SetIgnoreActorsEmpty();
 protected:
 	virtual void OnSphereBeginOverlap (
 		UPrimitiveComponent* OverlappedComponent,
@@ -55,4 +56,5 @@ private:
 
 	USceneComponent* TraceStart;
 	USceneComponent* TraceEnd;
+	TArray<AActor*> IgnoreActors;
 };
