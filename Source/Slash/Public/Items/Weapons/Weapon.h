@@ -47,6 +47,10 @@ protected:
 		int32 OtherBodyIndex,
 		bool bFromSweep,
 		const FHitResult& SweepResult);
+	// C++ 中仅声明, 且在C++ 中可调用, 蓝图中完成定义, 不能是 private
+	// 在蓝图中可作为一个事件
+	UFUNCTION(BlueprintImplementableEvent)
+	void CreateField(const FVector& Location);
 private:
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	USoundBase* EquipSound;

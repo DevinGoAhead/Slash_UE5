@@ -18,7 +18,7 @@ class SLASH_API AEnemy : public ACharacter, public IHitInterface
 
 public:
 	AEnemy();
-	virtual void GetHited(const FVector& Impactpoint) override;
+	virtual void GetHited_Implementation(const FVector& Impactpoint) override;
 
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;

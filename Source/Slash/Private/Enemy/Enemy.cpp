@@ -9,6 +9,8 @@
 #include "Sound/SoundBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystem.h"
+#include <type_traits>
+
 
 // Sets default values
 AEnemy::AEnemy()
@@ -24,7 +26,7 @@ AEnemy::AEnemy()
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 }
 
-void AEnemy::GetHited(const FVector& Impactpoint) {
+void AEnemy::GetHited_Implementation(const FVector& Impactpoint) {
 	if (HitedMontage) {
 		PlayMontage(FName("HitedReact_" + GetHitedDirection(Impactpoint)), HitedMontage);
 	}
@@ -63,7 +65,10 @@ void AEnemy::PlayMontage(FName MontageSction, UAnimMontage* Montage) {
 void AEnemy::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	//if (GEngine) {
+	//	if (std::is_abstract<IHitInterface>::value) GEngine->AddOnScreenDebugMessage(3, 5., FColor::Red, FString("is abstract"));
+	//	else GEngine->AddOnScreenDebugMessage(3, 5., FColor::Red, FString("is not abstract"));
+	//}
 }
 
 // Called every frame

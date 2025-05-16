@@ -92,16 +92,20 @@ void AWeapon::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent,
 
 	FHitResult HitResult;
 	auto Extent = CollisionBox->GetScaledBoxExtent();
-	auto IsHit = UKismetSystemLibrary::BoxTraceSingle(this, TraceStart->GetComponentLocation(), TraceEnd->GetComponentLocation(),
-		FVector(Extent.X, 0.5f, Extent.Z), TraceStart->GetComponentRotation(), ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>{this}, EDrawDebugTrace::None,
-		HitResult, true);
+	auto IsHit = UKismetSystemLibrary::BoxTraceSingle(this, TraceStart->GetComponentLocation(),
+		TraceEnd->GetComponentLocation(), FVector(Extent.X, 0.5f, Extent.Z), 
+		TraceStart->GetComponentRotation(), ETraceTypeQuery::TraceTypeQuery1,
+		false, TArray<AActor*>{this}, EDrawDebugTrace::None, HitResult, true);
 
 	auto HitedActor = HitResult.GetActor();
 	if (HitedActor) {
 		IgnoreActors.AddUnique(HitedActor); // 只有当 IgnoreActors 不存在 HitedActor, 才会添加
-		auto Enemy = Cast<AEnemy>(HitedActor); // 基类转子类
-		if (Enemy) { //如果转换成功
-			Enemy->GetHited(HitResult.ImpactPoint);
+		auto HitInterface = Cast<IHitInterface>(HitedActor); // 基类转子类
+		if (HitInterface) { //如果转换成功
+			//Enemy->GetHited(HitResult.ImpactPoint);
+			HitInterface->Execute_GetHited(HitedActor, HitResult.ImpactPoint);
 		}
+		// 我感觉在这里调用不是很合适, 直接在GetHited 中调用比较合适, 但是GetHited 是虚函数, 不知道是否有影响
+		CreateField(HitResult.ImpactPoint);
 	}
 }
