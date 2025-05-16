@@ -8,7 +8,7 @@
 #include "../DebugMacros.h"
 
 // Sets default values
-AItem::AItem() : TimeConstant(4.f), Amplitude(10.f), ItemState(EItemStates::EIS_Hoverring){
+AItem::AItem() : TimeConstant(3.f), Amplitude(2.f), ItemState(EItemStates::EIS_Hoverring){
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	// 如果 actor 不需要参与 tick, 例如 静态对象, 可以设置为 false
 	PrimaryActorTick.bCanEverTick = true;
@@ -29,12 +29,12 @@ float AItem::TransformedCos() const{
 }
 
 void AItem::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, 
-	AActor* OtherActor, 
-	UPrimitiveComponent* OtherComp, 
-	int32 OtherBodyIndex,
-	bool bFromSweep, 
-	const FHitResult& SweepResult) {
-	ASlashCharacter* SlashCharacter = Cast<ASlashCharacter>(OtherActor); // 父类转子类
+		AActor* OtherActor, 
+		UPrimitiveComponent* OtherComp, 
+		int32 OtherBodyIndex,
+		bool bFromSweep, 
+		const FHitResult& SweepResult) {
+		ASlashCharacter* SlashCharacter = Cast<ASlashCharacter>(OtherActor); // 父类转子类
 	if (SlashCharacter) { // 如果成功
 		SlashCharacter->SetOverlappingItem(this);
 	}
@@ -54,6 +54,7 @@ void AItem::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent,
 void AItem::BeginPlay() {
 	// Super::, 调用父类成员函	数
 	// 可能父类完成了一些功能
+	// 添加委托
 	Super::BeginPlay();
 	if (Sphere) {
 		Sphere->OnComponentBeginOverlap.AddDynamic(this, &AItem::OnSphereBeginOverlap);
