@@ -24,4 +24,9 @@ protected:
 private:
 	UPROPERTY(VisibleAnywhere);
 	UGeometryCollectionComponent* GeometryCollection;
+
+	UPROPERTY(EditAnywhere, Category = "PickupClass")
+	///* UClass* TreasureClass 这种形式会导致蓝图 Detail 列表中可供选择的将是所有继承自UClass 的类 */
+	//TArray<TSubclassOf<class ATreasure>> TreasureClasses; // 这样将限定为 ATreasure 及其子类
+	TSubclassOf<class ATreasure> TreasureClass;
 };

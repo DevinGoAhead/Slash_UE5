@@ -15,8 +15,8 @@ void ATreasure::OnSphereBeginOverlap(
 		const FHitResult& SweepResult) {
 	ASlashCharacter* SlashCharacter = Cast<ASlashCharacter>(OtherActor); // 父类转子类
 	if (SlashCharacter) { // 如果成功
-		if (PickupSound) {
-			UGameplayStatics::PlaySoundAtLocation(this, PickupSound, GetActorLocation());
+		if (TreasureProperties[TreasureIndex].PickupSound) {
+			UGameplayStatics::PlaySoundAtLocation(this, TreasureProperties[TreasureIndex].PickupSound, GetActorLocation());
 		}
 		Destroy();
 	}
