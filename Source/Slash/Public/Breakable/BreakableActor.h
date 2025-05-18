@@ -37,7 +37,8 @@ private:
 	// 问题, 物体打碎后, 碎片会 block 玩家角色
 	// 直接GeometryCollection 忽略pawn, 然后添加一个胶囊, 仅对 Pawn 碰撞响应 block, 打碎后再忽略Pawn, 示例使用的这个方案
 	// 可是为什么不直接打碎后直接 GeometryCollection 忽略pawn?
-	// 我准备都试一下
+	// // // 这个方案我测试了, 发现不行, 虽然打碎后, 碎片的 Detail 中看到碎片对pawn的碰撞响应确实是ignore, 
+	// // // 但实际碎片与pawn 也确实发生了 collision, 比如碎片会与角色移动碰撞发生飞起, 旋转
 	UPROPERTY(EditAnywhere)
 	UCapsuleComponent* Capsule;
 };

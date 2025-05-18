@@ -43,6 +43,7 @@ void ABreakableActor::GetHited_Implementation(const FVector& Impactpoint) {
 	if (!bBroken){
 		bBroken = true;
 		Capsule->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
+		//GeometryCollection->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
 		auto World = GetWorld();
 		if (World && !TreasureClasses.IsEmpty()) {
 			auto Location = GetActorLocation();
