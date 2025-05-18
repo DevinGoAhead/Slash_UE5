@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "Items/Item.h"
-#include "Slash/Public/Items/TreasureTypes.h"
 #include "Treasure.generated.h"
 
 /**
@@ -14,9 +13,6 @@ UCLASS()
 class SLASH_API ATreasure : public AItem
 {
 	GENERATED_BODY()
-public:
-	FORCEINLINE void SetIndex(uint32 Index) { TreasureIndex = Index; }
-	FORCEINLINE const TArray<FTreasureProperty>& GetTreasureProperties() { return TreasureProperties; }
 protected:
 	virtual void OnSphereBeginOverlap(
 		UPrimitiveComponent* OverlappedComponent,
@@ -33,11 +29,9 @@ protected:
 		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex) override;
 private:
-	// 封装到 FTreasureProperty 中
-	//UPROPERTY(EditAnywhere, Category = "TreasureProperty")
-	//USoundBase* PickupSound;
+	UPROPERTY(EditAnywhere, Category = "TreasureProperty")
+	USoundBase* PickupSound;
 
-	UPROPERTY(EditAnywhere)
-	TArray<FTreasureProperty> TreasureProperties;
-	uint32 TreasureIndex; // 爆出宝物的随机下标
+	UPROPERTY(EditAnywhere, Category = "TreasureProperty")
+	uint32 CoinValue;
 };
