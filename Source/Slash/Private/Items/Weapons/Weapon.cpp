@@ -3,15 +3,19 @@
 
 #include "Items/Weapons/Weapon.h"
 #include "Slash/Public/Characters/SlashCharacter.h"
+#include "Slash/DebugMacros.h"
+#include "Enemy/Enemy.h"
+
 #include "Sound/SoundBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Components/SphereComponent.h"
 #include "Components/BoxComponent.h"
-#include "Slash/DebugMacros.h"
-#include "Enemy/Enemy.h"
+#include "GameFramework/Pawn.h"
+#include "NiagaraComponent.h"
+#include "GameFramework/DamageType.h"
 
-AWeapon::AWeapon() : EquipSound(nullptr) {
+AWeapon::AWeapon() : EquipSound(nullptr), BaseDamage(20.f) {
 	CollisionBox = CreateDefaultSubobject<UBoxComponent>(FName("CollisionBox"));
 	CollisionBox->SetupAttachment(GetRootComponent());
 
@@ -29,15 +33,22 @@ AWeapon::AWeapon() : EquipSound(nullptr) {
 	TraceEnd->SetupAttachment(CollisionBox);
 }
 
-void AWeapon::EquipWeapon(USceneComponent* Inparent, const FName& InSocket) {
+void AWeapon::EquipWeapon(USceneComponent* Inparent, const FName& InSocket, AActor* NewOwner, APawn* InInstigator) {
 	AttachToComponentSnap(Inparent, InSocket);
 	ItemState = EItemStates::EIS_Equipped;
+	
+	SetOwner(NewOwner); // 武器拥有者
+	SetInstigator(InInstigator); // 物理世界行为发起者
+
 	if (EquipSound) {
 		UGameplayStatics::PlaySoundAtLocation(this, EquipSound, GetActorLocation()); // 此处Actor指 Weapon 实例
 	}
 	if (Sphere) {
 		Sphere->SetCollisionEnabled(ECollisionEnabled::NoCollision); // 捡到武器后其实碰撞球就没用了
 		Sphere = nullptr; // 示例代码没有做这里
+		if (EmbersEffecct) { // 捡到武器后就不需要效果了
+			EmbersEffecct->Deactivate(); // 释放
+		}
 	}
 }
 
@@ -100,6 +111,11 @@ void AWeapon::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent,
 	auto HitedActor = HitResult.GetActor();
 	if (HitedActor) {
 		IgnoreActors.AddUnique(HitedActor); // 只有当 IgnoreActors 不存在 HitedActor, 才会添加
+		if (auto InInstigator = GetInstigator(); InInstigator) {
+			if (auto Controller = InInstigator->GetController(); Controller) {
+				UGameplayStatics::ApplyDamage(HitedActor, BaseDamage, Controller, this, UDamageType::StaticClass());
+			}
+		}
 		auto HitInterface = Cast<IHitInterface>(HitedActor); // 基类转子类
 		if (HitInterface) { //如果转换成功
 			//Enemy->GetHited(HitResult.ImpactPoint);

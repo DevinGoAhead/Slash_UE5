@@ -23,3 +23,9 @@ inline void DRAW_DEBUG_POINT(AActor* ContextActor, FVector const& Position, floa
 		DrawDebugPoint(ContextActor->GetWorld(), Position, Size, PointColor, bPersistentLines, LifeTime, DepthPriority);
 	}
 }
+
+inline void ADD_SCREEN_DEBUG(int32 key, const FString& DebugMessage, float TimeToDisplay = 5.f, FColor DisplayColor = FColor::Blue) {
+	if (GEngine) {
+		GEngine->AddOnScreenDebugMessage(key, TimeToDisplay, DisplayColor, DebugMessage);
+	}
+}

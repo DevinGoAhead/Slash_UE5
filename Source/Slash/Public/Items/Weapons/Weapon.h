@@ -2,12 +2,15 @@
 
 #pragma once
 
+
+class USoundBase;
+class UBoxComponent;
+class APawn;
+
 #include "CoreMinimal.h"
 #include "Items/Item.h"
 #include "Weapon.generated.h"
 
-class USoundBase;
-class UBoxComponent;
 /**
  * 
  */
@@ -17,7 +20,7 @@ class SLASH_API AWeapon : public AItem
 GENERATED_BODY() // C++ 参与 UE 反射相关, 
 public:
 	AWeapon();
-	void EquipWeapon(USceneComponent* Inparent, const FName& InSocket);
+	void EquipWeapon(USceneComponent* Inparent, const FName& InSocket, AActor* NewOwner, APawn* InInstigator);
 	void AttachToComponentSnap(USceneComponent* Inparent, const FName& InSocket);
 	FORCEINLINE UBoxComponent* GetCollisionBox() { return CollisionBox; }
 	void SetIgnoreActorsEmpty();
@@ -61,4 +64,5 @@ private:
 	USceneComponent* TraceStart;
 	USceneComponent* TraceEnd;
 	TArray<AActor*> IgnoreActors;
+	float BaseDamage;
 };

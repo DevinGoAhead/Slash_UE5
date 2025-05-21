@@ -7,6 +7,8 @@ enum class EItemStates : uint8 {
 	EIS_Equipped
 };
 
+class UNiagaraComponent;
+
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h" // 这是 AActor 所在的头文件
 #include "Item.generated.h" // C++ 参与 UE 反射相关
@@ -75,4 +77,7 @@ protected:
 	UStaticMeshComponent* ItemMesh;
 
 	EItemStates ItemState;
+
+	UPROPERTY(EditAnywhere)
+	UNiagaraComponent* EmbersEffecct;
 };

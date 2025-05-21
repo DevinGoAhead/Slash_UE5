@@ -5,6 +5,7 @@
 #include "DrawDebugHelpers.h"
 #include "Components/SphereComponent.h"
 #include "Slash/Public/Characters/SlashCharacter.h"
+#include "NiagaraComponent.h"
 #include "../DebugMacros.h"
 
 // Sets default values
@@ -18,6 +19,9 @@ AItem::AItem() : TimeConstant(3.f), Amplitude(2.f), ItemState(EItemStates::EIS_H
 	// 创建组件
 	Sphere = CreateDefaultSubobject<USphereComponent>(TEXT("Sphere"));
 	Sphere->SetupAttachment(GetRootComponent());
+
+	EmbersEffecct = CreateDefaultSubobject<UNiagaraComponent>(FName("EmbersEffect"));
+	EmbersEffecct->SetupAttachment(ItemMesh);
 }
 
 float AItem::TransformedSin() const {

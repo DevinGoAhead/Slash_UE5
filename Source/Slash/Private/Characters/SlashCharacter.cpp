@@ -13,10 +13,9 @@
 
 // Sets default values
 ASlashCharacter::ASlashCharacter()
-	: OverlappingItem(nullptr), EquippedWeapon(nullptr), EquipMontage(nullptr), AttackMontage(nullptr)
-	, CharacterState(ECharacterStates::ECS_UnEquiped)
-	, ActionState(EActionStates::EAS_Unoccupied)
-{
+	: OverlappingItem(nullptr), EquippedWeapon(nullptr), 
+	CharacterState(ECharacterStates::ECS_UnEquiped), ActionState(EActionStates::EAS_Unoccupied),
+	AttackMontage(nullptr), EquipMontage(nullptr) {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -115,7 +114,8 @@ void ASlashCharacter::EKeyPressed() {
 	if (OverlappingItem) {
 		EquippedWeapon = Cast<AWeapon>(OverlappingItem);
 		if (EquippedWeapon) {
-			EquippedWeapon->EquipWeapon(GetMesh(), FName("RightHandSocket"));
+			// 第 2 个 this 为 InInstigator, 不同于EventInstigator
+			EquippedWeapon->EquipWeapon(GetMesh(), FName("RightHandSocket"), this, this);
 			CharacterState = ECharacterStates::ECS_EquippedOneHandedWeapon;
 			OverlappingItem = nullptr;
 		}

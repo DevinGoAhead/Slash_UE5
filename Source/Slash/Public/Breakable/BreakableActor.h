@@ -4,10 +4,12 @@
 
 class UGeometryCollectionComponent;
 class UCapsuleComponent;
+//class FChaosBreakEvent;
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Slash/Public/Interfaces/HitInterface.h"
+#include "Physics/Experimental/ChaosEventType.h"
 #include "BreakableActor.generated.h"
 
 UCLASS()
@@ -23,6 +25,10 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+	UFUNCTION()
+	void OnIndirectlyBroken(const FChaosBreakEvent& BreakEvent);
+private:
+	void SpawnActor();
 private:
 	UPROPERTY(VisibleAnywhere);
 	UGeometryCollectionComponent* GeometryCollection;

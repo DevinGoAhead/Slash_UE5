@@ -31,6 +31,25 @@ ABreakableActor::ABreakableActor() : bBroken(false) {
 // Called when the game starts or when spawned
 void ABreakableActor::BeginPlay() {
 	Super::BeginPlay();
+	GeometryCollection->OnChaosBreakEvent.AddDynamic(this, &ABreakableActor::OnIndirectlyBroken);
+}
+
+void ABreakableActor::OnIndirectlyBroken(const FChaosBreakEvent& BreakEvent) {
+	if (!bBroken) {
+		bBroken = true;
+		Capsule->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
+		SpawnActor();
+	}
+}
+
+void ABreakableActor::SpawnActor() {
+	auto World = GetWorld();
+	if (World && !TreasureClasses.IsEmpty()) {
+		auto Location = GetActorLocation();
+		Location.Z += 80;
+		uint32 Index = FMath::RandRange(int32(0), int32(TreasureClasses.Num() - 1));
+		auto SpawnedTreasure = World->SpawnActor<ATreasure>(TreasureClasses[Index], Location, GetActorRotation());
+	}
 }
 
 // Called every frame
@@ -44,13 +63,7 @@ void ABreakableActor::GetHited_Implementation(const FVector& Impactpoint) {
 		bBroken = true;
 		Capsule->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
 		//GeometryCollection->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
-		auto World = GetWorld();
-		if (World && !TreasureClasses.IsEmpty()) {
-			auto Location = GetActorLocation();
-			Location.Z += 80;
-			uint32 Index = FMath::RandRange(int32(0), int32(TreasureClasses.Num() - 1));
-			auto SpawnedTreasure = World->SpawnActor<ATreasure>(TreasureClasses[Index], Location, GetActorRotation());
-		}
+		SpawnActor();
 	}	
 }
 
