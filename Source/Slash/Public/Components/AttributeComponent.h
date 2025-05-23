@@ -22,8 +22,8 @@ protected:
 	virtual void BeginPlay() override;
 private:
 	UPROPERTY(EditAnywhere, Category = "ActorAttributes")
-	float MaxHealth; // 血条最大值
+	float MaxHealth = 100.f; // 血条最大值
 
 	UPROPERTY(EditAnywhere, Category = "ActorAttributes")
-	float Health; // 当前实际血条值
+	float Health = MaxHealth; // 当前实际血条值
 };

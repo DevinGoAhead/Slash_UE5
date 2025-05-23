@@ -48,32 +48,32 @@ private:
 	void PlayMontage(FName MontageSction, UAnimMontage* Montage);
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Component")
-	UCameraComponent* CameraView;
+	UCameraComponent* CameraView = nullptr;
 
 	UPROPERTY(VisibleAnywhere, Category = "Component")
-	USpringArmComponent* SpringArm;
+	USpringArmComponent* SpringArm = nullptr;
 
 	UPROPERTY(VisibleAnywhere, Category = "Component")
-	UGroomComponent* Hair;
+	UGroomComponent* Hair = nullptr;
 
 	UPROPERTY(VisibleAnywhere, Category = "Component")
-	UGroomComponent* Eyebrow;
+	UGroomComponent* Eyebrow = nullptr;
 
 	UPROPERTY(VisibleInstanceOnly, Category = "Item") // 仅实例可见
-	AItem* OverlappingItem;
+	AItem* OverlappingItem = nullptr;
 
-	AWeapon* EquippedWeapon;
+	AWeapon* EquippedWeapon = nullptr;
 
-	ECharacterStates CharacterState;
+	ECharacterStates CharacterState = ECharacterStates::ECS_UnEquiped;
 
 	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-	EActionStates ActionState;
+	EActionStates ActionState = EActionStates::EAS_Unoccupied;
 	
 	// 暴露给蓝图, 且允许蓝图修改, 将播放蒙太奇的决定权留给蓝图
 	UPROPERTY(EditDefaultsOnly, Category = "Montage")
-	UAnimMontage* AttackMontage;
+	UAnimMontage* AttackMontage = nullptr;
 	
 	// 暴露给蓝图, 且允许蓝图修改, 将播放蒙太奇的决定权留给蓝图
 	UPROPERTY(EditDefaultsOnly, Category = "Montage")
-	UAnimMontage* EquipMontage;
+	UAnimMontage* EquipMontage = nullptr;
 };

@@ -56,7 +56,7 @@ protected:
 	void CreateField(const FVector& Location);
 private:
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
-	USoundBase* EquipSound;
+	USoundBase* EquipSound = nullptr;
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	UBoxComponent* CollisionBox;
@@ -64,5 +64,5 @@ private:
 	USceneComponent* TraceStart;
 	USceneComponent* TraceEnd;
 	TArray<AActor*> IgnoreActors;
-	float BaseDamage;
+	float BaseDamage = 20.f;
 };

@@ -1,21 +1,19 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "Characters/SlashCharacter.h"
+#include "Slash/Public/Items/Item.h"
+#include "Slash/Public/Items/Weapons/Weapon.h"
+
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Slash/Public/Items/Item.h"
-#include "Slash/Public/Items/Weapons/Weapon.h"
 #include "GroomComponent.h"
-#include "Animation/AnimMontage.h"
 #include "Components/BoxComponent.h"
 
+#include "Animation/AnimMontage.h"
+
 // Sets default values
-ASlashCharacter::ASlashCharacter()
-	: OverlappingItem(nullptr), EquippedWeapon(nullptr), 
-	CharacterState(ECharacterStates::ECS_UnEquiped), ActionState(EActionStates::EAS_Unoccupied),
-	AttackMontage(nullptr), EquipMontage(nullptr) {
+ASlashCharacter::ASlashCharacter() {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -48,7 +46,9 @@ ASlashCharacter::ASlashCharacter()
 // Called when the game starts or when spawned
 void ASlashCharacter::BeginPlay() {
 	Super::BeginPlay();
-	
+	// 用于判定 Enemy::OnPawnSee 看到的是玩家而不是其它 Enemy
+	// 原始方案是每一次都将看到的角色 CastToSlashCharacter, 根据转换结果判断是否是SlashCharacter, 这样将更消耗资源
+	Tags.Add(FName("SlashCharacter"));
 }
 
 // 将武器挂载到 SpineSocket

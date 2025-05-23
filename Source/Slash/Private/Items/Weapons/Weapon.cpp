@@ -15,7 +15,7 @@
 #include "NiagaraComponent.h"
 #include "GameFramework/DamageType.h"
 
-AWeapon::AWeapon() : EquipSound(nullptr), BaseDamage(20.f) {
+AWeapon::AWeapon() {
 	CollisionBox = CreateDefaultSubobject<UBoxComponent>(FName("CollisionBox"));
 	CollisionBox->SetupAttachment(GetRootComponent());
 

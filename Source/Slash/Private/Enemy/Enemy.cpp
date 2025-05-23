@@ -5,18 +5,29 @@
 #include "Slash/DebugMacros.h"
 #include "Slash/Public/Components/AttributeComponent.h"
 #include "Slash/Public/HUD/HealthBarComponent.h"
+#include "Slash/Public/Characters/SlashCharacter.h"
 
 #include "Components/CapsuleComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Perception/PawnSensingComponent.h"
+#include "Navigation/PathFollowingComponent.h"
+
 #include "Animation/AnimMontage.h"
-#include "Kismet/KismetMathLibrary.h"
 #include "Sound/SoundBase.h"
-#include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystem.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "Kismet/GameplayStatics.h"
+#include "Math/NumericLimits.h"
+#include "AIController.h"
+#include "AITypes.h"
+#include "NavigationSystemTypes.h"
+#include "NavigationData.h"
+#include "AI/Navigation/NavigationTypes.h"
 
 #include <type_traits>
 
 // Sets default values
-AEnemy::AEnemy(){
+AEnemy::AEnemy() {
 	PrimaryActorTick.bCanEverTick = true;
 
 	auto SKMesh = GetMesh();
@@ -34,6 +45,19 @@ AEnemy::AEnemy(){
 	// 与 Attributes 匹配, 但是这个是要实际显示的
 	HealthBarWidget = CreateDefaultSubobject<UHealthBarComponent>(FName("HealthBar"));
 	HealthBarWidget->SetupAttachment(GetRootComponent());
+
+	// 设置 AI Controller 控制角色旋转相关项
+	auto MoveCompt = GetCharacterMovement();
+	MoveCompt->bOrientRotationToMovement = true;
+	MoveCompt->MaxWalkSpeed = 130; // 因为 Enemy初始是巡逻状态, 我期望巡逻时是walk 而不是run
+	bUseControllerRotationPitch = false;
+	bUseControllerRotationYaw = false;
+	bUseControllerRotationRoll = false;
+
+	//PawnSensing, 不需要attach 到其它组件
+	PawnSensing = CreateDefaultSubobject<UPawnSensingComponent>(FName("PawnSensing"));
+	PawnSensing->SightRadius = 2000.f; // 实际可调大一些, 这里为了debug 方便
+	PawnSensing->SetPeripheralVisionAngle(80.f);
 }
 
 void AEnemy::Die() {
@@ -46,6 +70,103 @@ void AEnemy::Die() {
 	// 后续处理
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision); // 禁止胶囊碰撞
 	SetLifeSpan(3.f); // 5s 后对象即销毁
+}
+
+void AEnemy::MoveToNextPatrol() {
+	auto Num = PatrolTargets.Num();
+	// 如果是静态 巡逻点, 那么直接在 BeginPlay 中检查一次也是可以的
+	// 我了解到似乎有些游戏存在游戏中动态改变巡逻点的机制, 故保留在 StartNextMove 中
+	if (Num == 0) return;
+
+	// 确保下一次的巡逻点 != 当前巡逻点
+	int8 Index;
+	do {
+		Index = FMath::RandRange(0, Num - 1);
+	} while (Index == PatrolTargetIndex);
+	
+	PatrolTargetIndex = Index;
+	PatrolTarget = PatrolTargets[PatrolTargetIndex];
+	MoveToTarget(PatrolTarget);
+}
+
+void AEnemy::MoveToTarget(AActor* Target) {
+	FAIMoveRequest MoveRequst;
+	MoveRequst.SetGoalActor(Target); // 巡逻目标
+	MoveRequst.SetAcceptanceRadius(50); // 与目标点距离 < 50 即判定完成Move, 停止移动, 实际存在误差, 可能100就判定完成任务了
+	EnemyController->MoveTo(MoveRequst);
+}
+
+void AEnemy::UpdateState() {
+	auto Opt = GetTargetDistance(CombatTarget);
+	FString CurState = StaticEnum<EEnemyStates>()->GetNameStringByValue(static_cast<int8>(EnemyState));
+	ADD_SCREEN_DEBUG(2, FString::Printf(TEXT("EnemyState: %s"), *CurState));
+	if (!Opt) return; // 无战斗目标
+	// 以下有战斗目标
+	double ToCombatDistance = Opt.value();
+	ADD_SCREEN_DEBUG(3, FString::Printf(TEXT("ToCombatDistance: %.0f"), ToCombatDistance));
+
+	// [0, 攻击范围), 且不处于攻击状态
+	if (ToCombatDistance < AttackRadius ) {
+		if(EnemyState != EEnemyStates::EES_Attacking) {
+			SetState(EEnemyStates::EES_Attacking);
+		}
+	}
+	// [攻击范围, 战斗范围), 且不处于追击状态
+	else if (ToCombatDistance < CombatRadius) {
+		if (EnemyState != EEnemyStates::EES_Chasing) {
+			SetState(EEnemyStates::EES_Chasing);
+		}
+	}
+	// [战斗范围, 视线范围) , 且不处于警觉状态状态
+	else if (ToCombatDistance < PawnSensing->SightRadius) {
+		if (EnemyState != EEnemyStates::EES_Alerting) {
+			SetState(EEnemyStates::EES_Alerting);
+		}
+	}
+	// [视线范围, ∞), 且不处于巡逻状态
+	else if(ToCombatDistance > PawnSensing->SightRadius){
+		if (EnemyState != EEnemyStates::EES_Patrolling) {
+			SetState(EEnemyStates::EES_Patrolling);
+		}
+	}
+}
+
+void AEnemy::SetState(EEnemyStates NewState) {
+	if (NewState == EnemyState) return;
+	EnemyState = NewState;
+	switch (EnemyState) {
+	case EEnemyStates::EES_Attacking:
+		EnemyController->StopMovement(); // 停止 move
+		//TODO Attacking...
+		break;
+	case EEnemyStates::EES_Chasing:
+		MoveToTarget(CombatTarget);
+		GetCharacterMovement()->MaxWalkSpeed = 300;
+		break;
+	case EEnemyStates::EES_Alerting:
+		EnemyController->StopMovement(); // 停止 move
+		// 隐藏血条
+		if (HealthBarWidget) {
+			HealthBarWidget->SetVisibility(false);
+		}
+		break;
+	case EEnemyStates::EES_Patrolling:
+		CombatTarget = nullptr; // 完全失去兴趣(战斗目标)
+		MoveToNextPatrol();
+		GetCharacterMovement()->MaxWalkSpeed = 130;
+		break;
+	default:
+		break;
+	}
+}
+
+void AEnemy::PatrolTimerFinished() {
+	MoveToNextPatrol();
+}
+
+std::optional<double> AEnemy::GetTargetDistance(AActor* Traget) {
+	if (!Traget) return std::nullopt;
+	return (CombatTarget->GetActorLocation() - GetActorLocation()).Size();
 }
 
 void AEnemy::GetHited_Implementation(const FVector& Impactpoint) {
@@ -99,25 +220,49 @@ void AEnemy::BeginPlay() {
 		HealthBarWidget->SetVisibility(false); // 初始不可见
 		HealthBarWidget->SetHealthPercent(1.f); // 初始化为100%
 	}
+	EnemyController = Cast<AAIController>(GetController());
+	if (EnemyController) {
+		EnemyController->ReceiveMoveCompleted.AddDynamic(this, &AEnemy::OnMoveCompleted);
+		MoveToNextPatrol();
+		// 以下为 debug 需要
+		//FAIMoveRequest MoveRequst;
+		//MoveRequst.SetGoalActor(PatrolTarget); // 巡逻目标
+		//MoveRequst.SetAcceptanceRadius(100); // 与目标点距离 < 100 即停止移动
+
+		//FNavPathSharedPtr NavPath;
+		//EnemyController->MoveTo(MoveRequst, &NavPath);
+		//if (NavPath->IsValid()) { // 或者直接检查 PathPoints 的Num 是否 > 1
+		//	ADD_SCREEN_DEBUG(3, FString::Printf(TEXT("%d"), NavPath->GetPathPoints().Num()));
+		//	for (const auto& Point : NavPath->GetPathPoints()) {
+		//		ADD_SCREEN_DEBUG(4, FString::Printf(TEXT("%d"), Point.Location.Z));
+		//		DRAW_DEBUG_SPHERE(this, Point.Location);
+		//	}
+		//}
+	}
+	if (PawnSensing) {
+		PawnSensing->OnSeePawn.AddDynamic(this, &AEnemy::OnPawnSee);
+	}
 }
 
-// Called every frame
+void AEnemy::OnMoveCompleted(FAIRequestID RequestID, EPathFollowingResult::Type Result) {
+	if (Result == EPathFollowingResult::Success) {
+		GetWorldTimerManager().SetTimer(PatrolTimer, this, &AEnemy::PatrolTimerFinished, FMath::RandRange(MinWaitTime, MaxWaitTime));
+	}
+}
+
+void AEnemy::OnPawnSee(APawn* Pawn) {
+	// 如果已经处于攻击状态或追逐状态, 那么即使看到玩家, 也不需要改变当前状态
+	if (!Pawn->ActorHasTag(FName("SlashCharacter"))  || CombatTarget) return;
+	
+	GetWorldTimerManager().ClearTimer(PatrolTimer); // 如果 Enemy 正在 wait, 则取消 wait, 下一步如何行动由 CheckCombatTarget 决定
+	CombatTarget = Cast<AActor>(Pawn);
+	UpdateState();
+}
+
 void AEnemy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	// 目标超过一定范围, 则放弃攻击并隐藏血条
-	if (CombatTarget) {
-		auto TargetLocation = CombatTarget->GetActorLocation();
-		auto SelfLocation = GetActorLocation();
-		auto DistanceToTarget = (TargetLocation - SelfLocation).Size();
-		//ADD_SCREEN_DEBUG(3, FString::Printf(TEXT("DistanceToTarget: %f"), DistanceToTarget));
-		if (DistanceToTarget > CombatRadius) {
-			CombatTarget = nullptr;
-			if (HealthBarWidget) {
-				HealthBarWidget->SetVisibility(false);
-			}
-		}
-	}
+	UpdateState();
 }
 
 // Called to bind functionality to input
@@ -126,7 +271,11 @@ void AEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) {
 }
 
 float AEnemy::TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser) {
-	CombatTarget = EventInstigator->GetPawn(); // 子类指针转父类, 切片
+	if (!CombatTarget) {
+		GetWorldTimerManager().ClearTimer(PatrolTimer);
+		CombatTarget = EventInstigator->GetPawn(); // 子类指针转父类, 切片
+		UpdateState();
+	}
 	if (Attributes) {
 		Attributes->ReceiveDamage(DamageAmount);
 		if (HealthBarWidget) {
