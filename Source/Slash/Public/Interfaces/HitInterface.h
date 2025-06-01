@@ -23,5 +23,5 @@ class SLASH_API IHitInterface
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 	UFUNCTION(BlueprintNativeEvent)
-	void GetHited(const FVector& Impactpoint);
+	void GetHited(const FVector& Impactpoint, AActor* Hitter); // 受攻击的部位及攻击者
 };

@@ -9,7 +9,7 @@
 #include "../DebugMacros.h"
 
 // Sets default values
-AItem::AItem() : TimeConstant(3.f), Amplitude(2.f), ItemState(EItemStates::EIS_Hoverring){
+AItem::AItem() : TimeConstant(1.5f), Amplitude(1.f), ItemState(EItemStates::EIS_Hoverring){
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	// 如果 actor 不需要参与 tick, 例如 静态对象, 可以设置为 false
 	PrimaryActorTick.bCanEverTick = true;
@@ -18,10 +18,22 @@ AItem::AItem() : TimeConstant(3.f), Amplitude(2.f), ItemState(EItemStates::EIS_H
 
 	// 创建组件
 	Sphere = CreateDefaultSubobject<USphereComponent>(TEXT("Sphere"));
-	Sphere->SetupAttachment(GetRootComponent());
+	Sphere->SetupAttachment(ItemMesh);
 
 	EmbersEffecct = CreateDefaultSubobject<UNiagaraComponent>(FName("EmbersEffect"));
 	EmbersEffecct->SetupAttachment(ItemMesh);
+	
+	// 碰撞响应配置
+	ItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);//关闭mesh的碰撞响应
+
+	Sphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	Sphere->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
+	Sphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	Sphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+	// 由于 角色的 capsule 为 pawn 且已忽略了 dynamic
+	// 这里只能使用 角色的 mesh 与 sphere 触发overlap, 而mesh 的类型是 dynamic
+	Sphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
+	Sphere->SetGenerateOverlapEvents(true);
 }
 
 float AItem::TransformedSin() const {
@@ -38,7 +50,8 @@ void AItem::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent,
 		int32 OtherBodyIndex,
 		bool bFromSweep, 
 		const FHitResult& SweepResult) {
-		ASlashCharacter* SlashCharacter = Cast<ASlashCharacter>(OtherActor); // 父类转子类
+	
+	ASlashCharacter* SlashCharacter = Cast<ASlashCharacter>(OtherActor); // 父类转子类
 	if (SlashCharacter) { // 如果成功
 		SlashCharacter->SetOverlappingItem(this);
 	}

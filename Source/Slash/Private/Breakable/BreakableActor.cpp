@@ -58,7 +58,7 @@ void ABreakableActor::Tick(float DeltaTime) {
 
 }
 
-void ABreakableActor::GetHited_Implementation(const FVector& Impactpoint) {
+void ABreakableActor::GetHited_Implementation(const FVector& Impactpoint, AActor* Hitter) {
 	if (!bBroken){
 		bBroken = true;
 		Capsule->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);

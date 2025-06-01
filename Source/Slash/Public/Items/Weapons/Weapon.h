@@ -43,6 +43,8 @@ protected:
 	virtual void BeginPlay() override;
 
 protected:
+	bool IsHitPartner(AActor* OtherActor);
+	
 	UFUNCTION()
 	void OnBoxOverlap(UPrimitiveComponent* OverlappedComponent,
 		AActor* OtherActor,
@@ -50,19 +52,27 @@ protected:
 		int32 OtherBodyIndex,
 		bool bFromSweep,
 		const FHitResult& SweepResult);
+	//void BoxTrace(FHitResult BoxHit);
 	// C++ 中仅声明, 且在C++ 中可调用, 蓝图中完成定义, 不能是 private
 	// 在蓝图中可作为一个事件
 	UFUNCTION(BlueprintImplementableEvent)
 	void CreateField(const FVector& Location);
 private:
-	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
+	UPROPERTY(EditAnywhere)
 	USoundBase* EquipSound = nullptr;
 
-	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
+	UPROPERTY(VisibleAnywhere, Category = "CollisionTrace")
 	UBoxComponent* CollisionBox;
 
+	UPROPERTY(VisibleDefaultsOnly, Category = "CollisionTrace")
 	USceneComponent* TraceStart;
+
+	UPROPERTY(VisibleDefaultsOnly, Category = "CollisionTrace")
 	USceneComponent* TraceEnd;
+
+	UPROPERTY(EditDefaultsOnly, Category = "CollisionTrace")
+	bool bDrawDebugTraceBox = false;
+
 	TArray<AActor*> IgnoreActors;
 	float BaseDamage = 20.f;
 };

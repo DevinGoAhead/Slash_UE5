@@ -13,96 +13,111 @@ struct FAIRequestID;
 namespace EPathFollowingResult { enum Type : int; } // 枚举前向声明
 class UPawnSensingComponent;
 
-#include "CoreMinimal.h"
-#include "GameFramework/Character.h"
-#include "Slash/Public/Interfaces/HitInterface.h"
-#include "Slash/Public/Characters/CharacerTypes.h"
-#include "TimerManager.h" 
 #include <optional>
+
+#include "Characters/BaseCharacter.h"
+#include "TimerManager.h" 
 #include "Enemy.generated.h"
 
 UCLASS()
-class SLASH_API AEnemy : public ACharacter, public IHitInterface
+class SLASH_API AEnemy : public ABaseCharacter
 {
 	GENERATED_BODY()
 
 public:
 	AEnemy();
-	virtual void GetHited_Implementation(const FVector& Impactpoint) override;
-
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void Destroyed();
+	
+	virtual void GetHited_Implementation(const FVector& Impactpoint, AActor* Hitter) override;
 	virtual float TakeDamage(float DamageAmount, const struct FDamageEvent& DamageEvent,
 							AController* EventInstigator, AActor* DamageCauser) override;
 protected:
 	virtual void BeginPlay() override;
+	virtual void Die() override;
+	virtual void Attack();
+	virtual void AttackEnd() override;
+
 	UFUNCTION()
 	void OnMoveCompleted(FAIRequestID RequestID, EPathFollowingResult::Type Result);
 	
 	UFUNCTION()
 	void OnPawnSee(APawn* Pawn);
+
+	UFUNCTION(BlueprintCallable)
+	FVector GetRotationWarpTarget(); // 本质返回的是点的坐标, 引擎根据坐标进行计算
+
+	UFUNCTION(BlueprintCallable)
+	FVector GetTranslationWarpTarget(); // 同上
+
 private:
-	void PlayMontage(FName MontageSction, UAnimMontage* Montage);
-	FString GetHitedDirection(const FVector& Impactpoint);
-	void Die();
 	void MoveToNextPatrol();
+	void MoveToTarget(AActor* Target);
 	void PatrolTimerFinished();
 	std::optional<double> GetTargetDistance(AActor* Traget);
-	void MoveToTarget(AActor* Target);
 	void UpdateState();
 	void SetState(EEnemyStates NewState);
+	void StartAttackTimer();
+	void AttackTimerFinished();
+	//void ResetAttackState(); // 当攻击被打断或由于某些原因本应执行攻击动作但未执行的
+
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	EEnemyStates EnemyState = EEnemyStates::EES_Patrolling; //默认巡逻状态
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AI Navigation")
+	AActor* CombatTarget = nullptr;
+
 private:
-	UPROPERTY(EditAnywhere, Category = "Montage")
-	UAnimMontage* HitedMontage = nullptr;
-
-	UPROPERTY(EditAnywhere, Category = "Montage")
-	UAnimMontage* DeathMontage = nullptr;
-
-	UPROPERTY(EditDefaultsOnly, Category = "SoundEffects")
-	USoundBase* HitedSound = nullptr;
-
-	UPROPERTY(EditDefaultsOnly, Category = "VisualEffects")
-	UParticleSystem* HitedParticle = nullptr;
-
-	UPROPERTY(VisibleAnywhere, Category = "HealthItem")
-	UAttributeComponent* Attributes = nullptr;
-
 	UPROPERTY(VisibleAnywhere, Category = "HealthItem")
 	UHealthBarComponent* HealthBarWidget = nullptr; //Component, 可以绑定widget 的 component
 
-	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	EDeathPose DeathPose = EDeathPose::EDP_Alive;
-
-	UPROPERTY(EditAnywhere, Category = "Combat")
-	double CombatRadius = 1000.f; // 经测试, 默认单位是厘米
-
-	UPROPERTY(EditAnywhere, Category = "Combat")
-	AActor* CombatTarget = nullptr;
-
-	UPROPERTY(EditAnywhere, Category = "AI Navigation")
-	double AttackRadius = 180.f; // 在这个范围内即发起攻击
-
-	//TPair<int8, AActor*> PatrolTarget; // current, 总是报错, 故拆解如下
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Category = "AI Navigation", meta = (AllowPrivateAccess = "true"))
-	AActor* PatrolTarget = nullptr;
-	
-	UPROPERTY(VisibleInstanceOnly, Category = "AI Navigation")
-	int8 PatrolTargetIndex = -1;
-
-	UPROPERTY(EditInstanceOnly, Category = "AI Navigation")
-	TArray<AActor*> PatrolTargets;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class AWeapon> WeaponClass;
 
 	UPROPERTY()
 	AAIController* EnemyController = nullptr;
 
+	UPROPERTY(EditAnywhere, Category = "AI Navigation")
+	float WalkSpeed= 130.f;
+
+	UPROPERTY(EditAnywhere, Category = "AI Navigation")
+	float RunSpeed = 300.f;
+
+	UPROPERTY(EditAnywhere, Category = "AI Navigation")
+	double CombatRadius = 1000.f; // 经测试, 默认单位是厘米
+
+	UPROPERTY(EditDefaultsOnly, Category = "AI Navigation")
+	double WarpTargetDistance = 120.; // warp motion 完成后, Enemy 与目标之间的距离
+
+	UPROPERTY(EditAnywhere, Category = "AI Navigation")
+	double AttackRadius = 200.f; // 在这个范围内即发起攻击
+
+	UPROPERTY(EditAnywhere)
+	float MinAttackWait = 0.35f;
+	
+	UPROPERTY(EditAnywhere)
+	float MaxAttackWait = 0.75f;
+
+	FTimerHandle AttackTimer;
+
+	//TPair<int8, AActor*> PatrolTarget;, 总是报错, 故拆解如下
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Category = "AI Navigation", meta = (AllowPrivateAccess = "true"))
+	AActor* PatrolTarget = nullptr; // current PatrolTarget
+	
+	UPROPERTY(VisibleInstanceOnly, Category = "AI Navigation")
+	int8 PatrolTargetIndex = -1; 
+
 	UPROPERTY(EditInstanceOnly, Category = "AI Navigation")
-	float MinWaitTime = 2.f;
+	TArray<AActor*> PatrolTargets;
+
 	UPROPERTY(EditInstanceOnly, Category = "AI Navigation")
-	float MaxWaitTime = 6.f;
+	float MinPatrolWait = 2.f;
+	UPROPERTY(EditInstanceOnly, Category = "AI Navigation")
+	float MaxPatrolWait = 6.f;
 	FTimerHandle PatrolTimer;
 
 	UPROPERTY(VisibleAnywhere, Category = "AI Navigation")
 	UPawnSensingComponent* PawnSensing;
-
-	EEnemyStates EnemyState = EEnemyStates::EES_Patrolling; //默认巡逻状态
 };

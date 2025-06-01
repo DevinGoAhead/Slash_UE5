@@ -14,7 +14,6 @@
 
 // Sets default values
 ASlashCharacter::ASlashCharacter() {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	bUseControllerRotationPitch = false;
@@ -43,28 +42,17 @@ ASlashCharacter::ASlashCharacter() {
 	Hair->AttachmentName = FString("head"); // 绑定插槽
 }
 
-// Called when the game starts or when spawned
 void ASlashCharacter::BeginPlay() {
 	Super::BeginPlay();
 	// 用于判定 Enemy::OnPawnSee 看到的是玩家而不是其它 Enemy
 	// 原始方案是每一次都将看到的角色 CastToSlashCharacter, 根据转换结果判断是否是SlashCharacter, 这样将更消耗资源
-	Tags.Add(FName("SlashCharacter"));
+	Tags.Add(FName("EngageableTarget"));
 }
 
 // 将武器挂载到 SpineSocket
 void ASlashCharacter::Disarm() {
 	if (EquippedWeapon) {
 		EquippedWeapon->AttachToComponentSnap(GetMesh(), FName("SpineSocket"));
-	}
-}
-
-void ASlashCharacter::SetWeaponBoxCollision(ECollisionEnabled::Type CollisionEnabledType) {
-	if (EquippedWeapon) {
-		UBoxComponent* Box = EquippedWeapon->GetCollisionBox();
-		if(Box) {
-			Box->SetCollisionEnabled(CollisionEnabledType);
-			EquippedWeapon->SetIgnoreActorsEmpty();
-		}
 	}
 }
 
@@ -110,6 +98,7 @@ void ASlashCharacter::LookUp(float Value) {
 		AddControllerPitchInput(Value);
 	}
 }
+
 void ASlashCharacter::EKeyPressed() {
 	if (OverlappingItem) {
 		EquippedWeapon = Cast<AWeapon>(OverlappingItem);
@@ -138,22 +127,27 @@ void ASlashCharacter::EKeyPressed() {
 }
 
 void ASlashCharacter::Attack() {
+	Super::Attack();
 	if (CharacterState != ECharacterStates::ECS_UnEquiped 
 			&& ActionState == EActionStates::EAS_Unoccupied 
 			&& AttackMontage) {
 		ActionState = EActionStates::EAS_Attacking;
-		TArray<FName> Sections{"Attack_1", "Attack_2", "Attack_3"};
-		uint8 Random = FMath::RandRange((int32)0, (int32)(Sections.Num() - 1));
-		PlayMontage( Sections[Random], AttackMontage);
+		PlayMontage(RandomMontageSection("Attack_", AttackMontage), AttackMontage);
 	}
 }
 
-// Called every frame
+void ASlashCharacter::AttackEnd() {
+	ActionState = EActionStates::EAS_Unoccupied;
+}
+
+void ASlashCharacter::Die() {
+	Super::Die();
+}
+
 void ASlashCharacter::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
 }
 
-// Called to bind functionality to input
 void ASlashCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
@@ -162,18 +156,19 @@ void ASlashCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 	PlayerInputComponent->BindAxis(TEXT("LookUp"), this, &ASlashCharacter::LookUp);
 	PlayerInputComponent->BindAxis(TEXT("MoveRight"), this, &ASlashCharacter::MoveRight);
 
-
 	// 这里没有定义 ASlashCharacter::Jump, 直接调用父类的 Jump
 	PlayerInputComponent->BindAction(FName("Jump"), IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction(FName("EKeyPressed"), IE_Pressed, this, &ASlashCharacter::EKeyPressed);
 	PlayerInputComponent->BindAction(FName("Attack"), IE_Pressed, this, &ASlashCharacter::Attack);
 }
 
-void ASlashCharacter::PlayMontage(FName MontageSction, UAnimMontage* Montage) {
-	auto AnimInstance = GetMesh()->GetAnimInstance();
-	if (AnimInstance) {
-		AnimInstance->Montage_Play(Montage);// 准备播放状态
-		AnimInstance->Montage_JumpToSection(MontageSction, Montage);
-	}
+float ASlashCharacter::TakeDamage(float DamageAmount, const struct FDamageEvent& DamageEvent,
+	AController* EventInstigator, AActor* DamageCauser) {
+	Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	return DamageAmount;
 }
 
+void ASlashCharacter::GetHited_Implementation(const FVector& Impactpoint, AActor* Hitter) {
+	Super::GetHited_Implementation(Impactpoint, Hitter);
+	ResetAttackState();
+}

@@ -20,7 +20,7 @@ class SLASH_API ABreakableActor : public AActor, public IHitInterface
 public:	
 	ABreakableActor();
 	virtual void Tick(float DeltaTime) override;
-	virtual void GetHited_Implementation(const FVector& Impactpoint) override;
+	virtual void GetHited_Implementation(const FVector& Impactpoint, AActor* Hitter) override;
 
 protected:
 	virtual void BeginPlay() override;

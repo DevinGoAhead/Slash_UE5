@@ -20,10 +20,12 @@ AWeapon::AWeapon() {
 	CollisionBox->SetupAttachment(GetRootComponent());
 
 	// 配置 Collision 属性
-	//CollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	CollisionBox->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
 	CollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
-	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore); // 避免与角色碰撞
+	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
+	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+	CollisionBox->SetGenerateOverlapEvents(true);
 
 	//我这里采取了与示例不同的方案
 	TraceStart = CreateDefaultSubobject<USceneComponent>(FName("TraceStart"));
@@ -81,11 +83,12 @@ void AWeapon::OnSphereEndOverlap(
 
 void AWeapon::BeginPlay() {
 	Super::BeginPlay();
-	// 对 TraceStart, TraceEnd 调整
-	//这里Location 的确定需要根据蓝图中CollisionBox 的调整情况确定
-	auto Extent = CollisionBox->GetScaledBoxExtent();
-	TraceStart->SetRelativeLocation(FVector(0.f, -Extent.Y, 0.f));
-	TraceEnd->SetRelativeLocation(FVector(0.f, Extent.Y, 0.f));
+	// 由于对武器的起始姿态做了调整, 因而直接在蓝图调整位置, 非常直观
+	//// 对 TraceStart, TraceEnd 调整
+	////这里Location 的确定需要根据蓝图中CollisionBox 的调整情况确定
+	//auto Extent = CollisionBox->GetScaledBoxExtent();
+	//TraceStart->SetRelativeLocation(FVector(0.f, -Extent.Y, 0.f));
+	//TraceEnd->SetRelativeLocation(FVector(0.f, Extent.Y, 0.f));
 
 	if (CollisionBox) {
 		CollisionBox->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnBoxOverlap);
@@ -98,30 +101,37 @@ void AWeapon::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent,
 		int32 OtherBodyIndex,
 		bool bFromSweep,
 		const FHitResult& SweepResult){
-	if (OtherActor == this) return; // 避免 weapon 的 collision box 与 weapon 自己的其它组件 overlap
-	if (IgnoreActors.Find(OtherActor) != INDEX_NONE) return; // 如果之前已被攻击过一次, 已经在 IgnoreActors 中了
+	// 避免 weapon 的 collision box 与 weapon 自己的其它组件 overlap
+	// 如果之前已被攻击过一次, 已经在 IgnoreActors 中了
+	if (OtherActor == this || IgnoreActors.Find(OtherActor) != INDEX_NONE || IsHitPartner(OtherActor)) return;
 
 	FHitResult HitResult;
-	auto Extent = CollisionBox->GetScaledBoxExtent();
-	auto IsHit = UKismetSystemLibrary::BoxTraceSingle(this, TraceStart->GetComponentLocation(),
-		TraceEnd->GetComponentLocation(), FVector(Extent.X, 0.5f, Extent.Z), 
-		TraceStart->GetComponentRotation(), ETraceTypeQuery::TraceTypeQuery1,
-		false, TArray<AActor*>{this}, EDrawDebugTrace::None, HitResult, true);
+	auto Extent = CollisionBox->GetScaledBoxExtent(); // InitialExten * Scale
+	auto IsHit = UKismetSystemLibrary::BoxTraceSingle(this,
+		TraceStart->GetComponentLocation(), TraceEnd->GetComponentLocation(),
+		FVector(Extent.X * 0.5f, Extent.Y * 0.5f, 1.f), FRotator(0.f), ETraceTypeQuery::TraceTypeQuery1, false, TArray<AActor*>{this, GetOwner()},
+		bDrawDebugTraceBox ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None,
+		HitResult, true);
 
-	auto HitedActor = HitResult.GetActor();
-	if (HitedActor) {
+	if (auto HitedActor = HitResult.GetActor(); HitedActor) {
+		if (IsHitPartner(HitedActor)) return; // 即使overlap 的是玩家, trace 到的目标也可能为enemy
 		IgnoreActors.AddUnique(HitedActor); // 只有当 IgnoreActors 不存在 HitedActor, 才会添加
 		if (auto InInstigator = GetInstigator(); InInstigator) {
 			if (auto Controller = InInstigator->GetController(); Controller) {
 				UGameplayStatics::ApplyDamage(HitedActor, BaseDamage, Controller, this, UDamageType::StaticClass());
 			}
 		}
-		auto HitInterface = Cast<IHitInterface>(HitedActor); // 基类转子类
-		if (HitInterface) { //如果转换成功
+		// 基类转子类
+		if (auto HitInterface = Cast<IHitInterface>(HitedActor); HitInterface) { 
 			//Enemy->GetHited(HitResult.ImpactPoint);
-			HitInterface->Execute_GetHited(HitedActor, HitResult.ImpactPoint);
+			HitInterface->Execute_GetHited(HitedActor, HitResult.ImpactPoint, GetOwner());
 		}
 		// 我感觉在这里调用不是很合适, 直接在GetHited 中调用比较合适, 但是GetHited 是虚函数, 不知道是否有影响
 		CreateField(HitResult.ImpactPoint);
 	}
+}
+
+bool AWeapon::IsHitPartner(AActor* OtherActor) {
+	//return Owner && Owner->ActorHasTag(FName("Enemy")) && OtherActor->ActorHasTag(FName("Enemy"));
+	return GetOwner()->ActorHasTag(FName("Enemy")) && OtherActor->ActorHasTag(FName("Enemy"));
 }
