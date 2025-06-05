@@ -120,4 +120,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "AI Navigation")
 	UPawnSensingComponent* PawnSensing;
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class ASoul> SoulClass;
 };

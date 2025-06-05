@@ -4,9 +4,10 @@
 #include "Enemy/Enemy.h"
 #include "Slash/DebugMacros.h"
 #include "Slash/Public/Components/AttributeComponent.h"
-#include "Slash/Public/HUD/HealthBarComponent.h"
-#include "Slash/Public/Characters/SlashCharacter.h"
-#include "Slash/Public/Items/Weapons/Weapon.h"
+#include "HUD/HealthBarComponent.h"
+#include "Characters/SlashCharacter.h"
+#include "Items/Weapons/Weapon.h"
+#include "Items/Soul.h"
 
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -97,7 +98,9 @@ std::optional<double> AEnemy::GetTargetDistance(AActor* Traget) {
 
 void AEnemy::OnPawnSee(APawn* Pawn) {
 	// 如果已经处于攻击状态或追逐状态, 那么即使看到玩家, 也不需要改变当前状态
-	if (!Pawn->ActorHasTag(FName("EngageableTarget")) || CombatTarget) return;
+	if (!Pawn->ActorHasTag(FName("EngageableTarget")) 
+			|| Pawn->ActorHasTag(FName("Dead"))
+			|| CombatTarget) return;
 
 	GetWorldTimerManager().ClearTimer(PatrolTimer); // 如果 Enemy 正在 wait, 则取消 wait, 下一步如何行动由 CheckCombatTarget 决定
 	CombatTarget = Cast<AActor>(Pawn);
@@ -105,14 +108,19 @@ void AEnemy::OnPawnSee(APawn* Pawn) {
 }
 
 void AEnemy::UpdateState() {
+	if (EnemyState == EEnemyStates::EES_Dead) return;// 没必要执行任何动作了
+	
 	auto Opt = GetTargetDistance(CombatTarget);
+	//debug 当前状态
+	FString CurState = StaticEnum<EEnemyStates>()->GetNameStringByValue(static_cast<int8>(EnemyState));
+	ADD_SCREEN_DEBUG(2, FString::Printf(TEXT("EnemyState: %s"), *CurState));
 
-	////debug 当前状态
-	//FString CurState = StaticEnum<EEnemyStates>()->GetNameStringByValue(static_cast<int8>(EnemyState));
-	//ADD_SCREEN_DEBUG(2, FString::Printf(TEXT("EnemyState: %s"), *CurState));
-	
-	if (!Opt || EnemyState == EEnemyStates::EES_Dead) return;// 没必要执行任何动作了
-	
+	if (!Opt) {
+		if (EnemyState != EEnemyStates::EES_Patrolling) {
+			SetState(EEnemyStates::EES_Patrolling);
+		}
+		return;
+	}
 	// 以下有战斗目标
 	double ToCombatDistance = Opt.value();
 	//debug 当前与目标距离
@@ -121,13 +129,14 @@ void AEnemy::UpdateState() {
 	// [0, 攻击范围), 且不处于攻击状态
 	if (ToCombatDistance < AttackRadius) {
 		if (EnemyState != EEnemyStates::EES_Attacking
-				&& EnemyState != EEnemyStates::EES_Engaged) {
+			&& EnemyState != EEnemyStates::EES_Engaged) {
 			SetState(EEnemyStates::EES_Attacking);
 		}
 	}
 	// [攻击范围, 战斗范围), 且不处于追击状态
 	else if (ToCombatDistance < CombatRadius) {
-		if (EnemyState != EEnemyStates::EES_Chasing) {
+		if (EnemyState != EEnemyStates::EES_Chasing/* || 
+			(EnemyState == EEnemyStates::EES_Chasing && GetCharacterMovement()->Velocity.Size2D() < 0.2f)*/) {
 			SetState(EEnemyStates::EES_Chasing);
 		}
 	}
@@ -231,6 +240,10 @@ void AEnemy::AttackTimerFinished() {
 void AEnemy::Attack() {
 	Super::Attack();
 	if (EnemyState == EEnemyStates::EES_Dead) return;
+	if (CombatTarget && CombatTarget->ActorHasTag(FName("Dead"))) {
+		CombatTarget = nullptr;
+		return;
+	}
 	//if (auto Opt = GetTargetDistance(CombatTarget); Opt && AttackMontage) {
 		//if (Opt.value() < 130.) {
 			EnemyController->StopMovement(); // 停止 move
@@ -260,6 +273,7 @@ void AEnemy::Attack() {
 // 在 Montage Animation 结束时的 Notify 中调用
 void AEnemy::AttackEnd() {
 	EnemyState = EEnemyStates::EES_None;
+	//UE_LOG(LogTemp, Warning, TEXT("AEnemy::AttackEnd() "));
 	UpdateState();
 }
 
@@ -311,8 +325,9 @@ void AEnemy::GetHited_Implementation(const FVector& Impactpoint, AActor* Hitter)
 		// 这里主要针对正在Enemy 正在攻击时, 受到玩家攻击被打断, 导致无法执行完成攻击动画,无法重置状态为None
 		// Attributes->IsAlive()(EnemyState != EEnemyStates::EES_Dead ) 主要是由于, 如果是最后一击, 就没必要再重新攻击了
 		//ADD_SCREEN_DEBUG(8, FString("Reset Attack While Hited"));
-		ResetAttackState();
+		//ResetAttackState(); // 会失败, 导致状态不重置, 原因不知
 		GetWorldTimerManager().ClearTimer(AttackTimer);
+		EnemyState = EEnemyStates::EES_None;
 		UpdateState();
 	}
 }
@@ -326,8 +341,11 @@ void AEnemy::Die() {
 	CombatTarget = nullptr; // 否则会在GetTargetDistance
 
 	// 后续处理
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision); // 禁止胶囊碰撞
-	SetLifeSpan(10.f); // 3s 后对象即销毁
+	if (HealthBarWidget) {
+		HealthBarWidget->SetVisibility(false);
+	}
+	GetWorld()->SpawnActor<ASoul>(SoulClass, GetActorLocation(), GetActorRotation());
+	SetLifeSpan(5.f); // 3s 后对象即销毁
 }
 
 

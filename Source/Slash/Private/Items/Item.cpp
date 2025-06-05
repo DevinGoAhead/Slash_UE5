@@ -2,11 +2,16 @@
 
 
 #include "Items/Item.h"
-#include "DrawDebugHelpers.h"
-#include "Components/SphereComponent.h"
-#include "Slash/Public/Characters/SlashCharacter.h"
-#include "NiagaraComponent.h"
+
 #include "../DebugMacros.h"
+#include "Components/SphereComponent.h"
+#include "Slash/Public/Interfaces/PickupInterface.h"
+
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
+#include "Kismet/GameplayStatics.h"
+#include "DrawDebugHelpers.h"
+
 
 // Sets default values
 AItem::AItem() : TimeConstant(1.5f), Amplitude(1.f), ItemState(EItemStates::EIS_Hoverring){
@@ -20,8 +25,8 @@ AItem::AItem() : TimeConstant(1.5f), Amplitude(1.f), ItemState(EItemStates::EIS_
 	Sphere = CreateDefaultSubobject<USphereComponent>(TEXT("Sphere"));
 	Sphere->SetupAttachment(ItemMesh);
 
-	EmbersEffecct = CreateDefaultSubobject<UNiagaraComponent>(FName("EmbersEffect"));
-	EmbersEffecct->SetupAttachment(ItemMesh);
+	ItemEffect = CreateDefaultSubobject<UNiagaraComponent>(FName("EmbersEffect"));
+	ItemEffect->SetupAttachment(ItemMesh);
 	
 	// 碰撞响应配置
 	ItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);//关闭mesh的碰撞响应
@@ -50,23 +55,27 @@ void AItem::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent,
 		int32 OtherBodyIndex,
 		bool bFromSweep, 
 		const FHitResult& SweepResult) {
-	
-	ASlashCharacter* SlashCharacter = Cast<ASlashCharacter>(OtherActor); // 父类转子类
-	if (SlashCharacter) { // 如果成功
-		SlashCharacter->SetOverlappingItem(this);
-	}
 }
 
 void AItem::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent,
 	AActor* OtherActor,
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex) {
+}
 
-	ASlashCharacter* SlashCharacter = Cast<ASlashCharacter>(OtherActor); // 父类转子类
-	if (SlashCharacter) { // 如果成功
-		SlashCharacter->SetOverlappingItem(nullptr);
+void AItem::SpawnPickupSound() {
+	if (PickupSound) {
+		UGameplayStatics::SpawnSoundAtLocation(this, PickupSound, GetActorLocation());
 	}
 }
+
+void AItem::SpawnPickupSystem() {
+	if (PickupEffect) {
+		auto Location = GetActorLocation();
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, PickupEffect, FVector(Location.X, Location.Y, (Location.Z - 200)));
+	}
+}
+
 // Called when the game starts or when spawned
 void AItem::BeginPlay() {
 	// Super::, 调用父类成员函	数

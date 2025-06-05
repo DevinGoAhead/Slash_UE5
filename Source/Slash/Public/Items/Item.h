@@ -8,6 +8,7 @@ enum class EItemStates : uint8 {
 };
 
 class UNiagaraComponent;
+class UNiagaraSystem;
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h" // 这是 AActor 所在的头文件
@@ -27,6 +28,8 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 protected:
+	void SpawnPickupSound();
+	void SpawnPickupSystem();
 	//UFUNCTION(BlueprintCallable) // 允许在Blueprint 中调用
 	UFUNCTION(BlueprintPure) // 纯蓝图函数, 不需要输入和输出
 	float TransformedSin() const;
@@ -78,6 +81,12 @@ protected:
 
 	EItemStates ItemState;
 
-	UPROPERTY(EditAnywhere)
-	UNiagaraComponent* EmbersEffecct;
+	UPROPERTY(EditAnywhere, Category = "Effect")
+	UNiagaraComponent* ItemEffect;
+
+	UPROPERTY(EditAnywhere, Category = "Effect")
+	UNiagaraSystem* PickupEffect;
+
+	UPROPERTY(EditAnywhere, Category = "Effect")
+	USoundBase* PickupSound;
 };

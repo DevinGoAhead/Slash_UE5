@@ -13,6 +13,8 @@ UCLASS()
 class SLASH_API ATreasure : public AItem
 {
 	GENERATED_BODY()
+public:
+	FORCEINLINE uint32 GetCoinValue() const { return CoinValue; }
 protected:
 	virtual void OnSphereBeginOverlap(
 		UPrimitiveComponent* OverlappedComponent,
@@ -29,9 +31,9 @@ protected:
 		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex) override;
 private:
-	UPROPERTY(EditAnywhere, Category = "TreasureProperty")
-	USoundBase* PickupSound;
+	/*UPROPERTY(EditAnywhere, Category = "TreasureProperty")
+	USoundBase* PickupSound;*/
 
-	UPROPERTY(EditAnywhere, Category = "TreasureProperty")
+	UPROPERTY(EditAnywhere/*, Category = "TreasureProperty"*/)
 	uint32 CoinValue;
 };

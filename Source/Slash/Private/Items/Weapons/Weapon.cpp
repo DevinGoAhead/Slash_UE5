@@ -48,8 +48,8 @@ void AWeapon::EquipWeapon(USceneComponent* Inparent, const FName& InSocket, AAct
 	if (Sphere) {
 		Sphere->SetCollisionEnabled(ECollisionEnabled::NoCollision); // 捡到武器后其实碰撞球就没用了
 		Sphere = nullptr; // 示例代码没有做这里
-		if (EmbersEffecct) { // 捡到武器后就不需要效果了
-			EmbersEffecct->Deactivate(); // 释放
+		if (ItemEffect) { // 捡到武器后就不需要效果了
+			ItemEffect->Deactivate(); // 释放
 		}
 	}
 }
@@ -71,6 +71,10 @@ void AWeapon::OnSphereBeginOverlap(
 		bool bFromSweep,
 		const FHitResult& SweepResult) {
 	Super::OnSphereBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
+	auto PickupInterface = Cast<IPickupInterface>(OtherActor); // 父类转子类
+	if (PickupInterface) { // 如果成功
+		PickupInterface->SetOverlappingItem(this); // 这里是针对武器的, 
+	}
 }
 
 void AWeapon::OnSphereEndOverlap(
@@ -79,6 +83,10 @@ void AWeapon::OnSphereEndOverlap(
 		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex) {
 	Super::OnSphereEndOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex);
+	auto PickupInterface = Cast<IPickupInterface>(OtherActor); // 父类转子类
+	if (PickupInterface) { // 如果成功
+		PickupInterface->SetOverlappingItem(nullptr);
+	}
 }
 
 void AWeapon::BeginPlay() {

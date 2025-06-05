@@ -29,6 +29,7 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void Attack();
+	virtual void Dodge();
 	FString GetHitedDirection(const FVector& HitterLocation);
 	virtual void Die();
 	void PlayMontage(const FName& MontageSction, UAnimMontage* Montage);
@@ -40,6 +41,9 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void SetWeaponBoxCollision(ECollisionEnabled::Type CollisionEnabledType);
+
+	UFUNCTION(BlueprintCallable)
+	virtual void DodgeEnd();
 
 protected:
 	AWeapon* EquippedWeapon = nullptr;
@@ -53,6 +57,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Montage")
 	UAnimMontage* DeathMontage = nullptr;
+
+	UPROPERTY(EditAnywhere, Category = "Montage")
+	UAnimMontage* DodgeMontage = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, Category = "SoundEffects")
 	USoundBase* HitedSound = nullptr;

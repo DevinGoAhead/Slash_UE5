@@ -22,15 +22,21 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	ASlashCharacter* SlashCharacter;
 
-	UPROPERTY(BlueprintReadOnly, Category = Movement)
+	UPROPERTY(BlueprintReadOnly, Category = "Movement")
 	UCharacterMovementComponent* SlashCharacterMovement;
 
-	UPROPERTY(BlueprintReadOnly, Category = Movement)
+	UPROPERTY(BlueprintReadOnly, Category = "Movement")
 	float GroundSpeed;
 
-	UPROPERTY(BlueprintReadOnly, Category = Movement)
+	UPROPERTY(BlueprintReadOnly, Category = "Movement")
 	bool IsFalling; // 是否正在下落
 
-	UPROPERTY(BlueprintReadOnly, Category = "Movement | Character State")
+	UPROPERTY(BlueprintReadOnly, Category = "Character State")
 	ECharacterStates CharacterState;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Character State")
+	EActionStates ActonState;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Character State")
+	EDeathPose DeathPose;
 };

@@ -2,11 +2,12 @@
 
 #include "Characters/BaseCharacter.h"
 #include "Slash/DebugMacros.h"
-#include "Slash/Public/Items/Weapons/Weapon.h"
+#include "Items/Weapons/Weapon.h"
 #include "Slash/Public/Components/AttributeComponent.h"
 
 #include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Animation/AnimMontage.h"
 #include "Sound/SoundBase.h"
 #include "Particles/ParticleSystem.h"
@@ -61,6 +62,8 @@ void ABaseCharacter::SetWeaponBoxCollision(ECollisionEnabled::Type CollisionEnab
 	}
 }
 
+void ABaseCharacter::DodgeEnd(){}
+
 void ABaseCharacter::GetHited_Implementation(const FVector& Impactpoint, AActor* Hitter) {
 	if (EquippedWeapon) {
 		SetWeaponBoxCollision(ECollisionEnabled::NoCollision);
@@ -101,7 +104,7 @@ void ABaseCharacter::Die() {
 	if (!DeathMontage) return;
 	// 死亡动画
 	int32 index = FMath::RandRange(1, DeathMontage->CompositeSections.Num());
-	ADD_SCREEN_DEBUG(6, FString::FromInt(index));
+	ADD_SCREEN_DEBUG(10, FString::FromInt(index));
 	EDeathPose Pose = static_cast<EDeathPose>(index); // UE Cast 转换失败, 故使用 c++ 库函数
 	//TEnumAsByte<EDeathPose> Pose(index);
 
@@ -110,13 +113,18 @@ void ABaseCharacter::Die() {
 		PlayMontage(FName("Death_" + FString::FromInt(index)), DeathMontage);
 	}
 	else {
-		ADD_SCREEN_DEBUG(5, "!!!Pose Bounds!!!");
+		ADD_SCREEN_DEBUG(100, "!!!Pose Bounds!!!");
 	}
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision); // 禁止胶囊碰撞
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision); // 否则, 如果攻击速度够快, 在倒下的瞬间还可以被攻击到
+	GetCharacterMovement()->DisableMovement(); // 不知为何, 死亡后滑一段, 这里暴力禁止移动
 }
 
 void ABaseCharacter::Attack() {
 	if (AttackMontage) return;
 }
+
+void ABaseCharacter::Dodge(){}
 
 void ABaseCharacter::AttackEnd() {}
 

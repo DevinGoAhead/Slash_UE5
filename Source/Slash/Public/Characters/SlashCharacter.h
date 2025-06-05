@@ -8,12 +8,14 @@ class UGroomComponent;
 class AItem;
 class UAnimMontage;
 class AWeapon;
+class USlashOverlay;
 
 #include "Characters/BaseCharacter.h"
+#include "Slash/Public/Interfaces/PickupInterface.h"
 #include "SlashCharacter.generated.h"
 
 UCLASS()
-class SLASH_API ASlashCharacter : public ABaseCharacter
+class SLASH_API ASlashCharacter : public ABaseCharacter, public IPickupInterface
 {
 	GENERATED_BODY()
 
@@ -21,18 +23,24 @@ public:
 	ASlashCharacter();
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void SetOverlappingItem(AItem* Item) override;
+	virtual void PickupTreasure(ATreasure* Treasure) override;
+	virtual void PickupSoul(ASoul* Soul) override;
 	virtual float TakeDamage(float DamageAmount, const struct FDamageEvent& DamageEvent,
 		AController* EventInstigator, AActor* DamageCauser) override;
 	virtual void GetHited_Implementation(const FVector& Impactpoint, AActor* Hitter) override;
-	FORCEINLINE void SetOverlappingItem(AItem* Item) { OverlappingItem = Item; }
 	FORCEINLINE ECharacterStates GetCharacterState() { return CharacterState; }
+	FORCEINLINE EActionStates GetActionState() { return ActionState; }
+	FORCEINLINE EDeathPose GetDeathPose() { return DeathPose; }
 
 protected:
 	virtual void BeginPlay() override;
 	virtual void Attack() override;
 	virtual void Die() override;
-
+	virtual void Jump() override;
+	virtual void Dodge() override;
 	virtual void AttackEnd() override;
+	virtual void DodgeEnd() override;
 	// 暴露给蓝图, 动画通知时调用
 	UFUNCTION(BlueprintCallable)
 	void Arm();
@@ -70,4 +78,10 @@ private:
 	// 暴露给蓝图, 且允许蓝图修改, 将播放蒙太奇的决定权留给蓝图
 	UPROPERTY(EditDefaultsOnly, Category = "Montage")
 	UAnimMontage* EquipMontage = nullptr;
+	
+	UPROPERTY()
+	USlashOverlay* SlashOverlay = nullptr;
+
+	UPROPERTY(EditDefaultsOnly)
+	float StaminaCostOfDodge = 15.f;
 };
